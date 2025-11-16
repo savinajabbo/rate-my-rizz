@@ -13,7 +13,6 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
   const [randomTopic, setRandomTopic] = useState('mysterious topics');
-  const [loadingTopic, setLoadingTopic] = useState(false);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,44 +76,62 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fallbackTopics = [
-    'vintage motorcycles', 'deep sea creatures', 'conspiracy theories', 'homemade pasta',
-    'space exploration', 'indoor plants', 'true crime podcasts', 'pickle making',
-    'quantum physics', 'pet turtles', 'vintage vinyl', 'urban legends',
-    'coffee brewing', 'ghost stories', 'board games', 'street art',
-    'astronomy', 'cooking disasters', 'weird dreams', 'childhood fears',
-    'favorite conspiracy', 'alien encounters', 'time travel', 'parallel universes'
+  const topics = [
+    'the ethics of time-travel tourism',
+    'why humans love spicy food',
+    'the psychology of fandoms',
+    'how black holes evaporate',
+    'the rise of ai-generated music',
+    'the color "blue" in ancient languages',
+    'why cats loaf',
+    'the future of space mining',
+    'the mandela effect',
+    'the science of déjà vu',
+    'how memes spread like viruses',
+    'deep-sea gigantism',
+    'the trolley problem but with self-driving cars',
+    'quantum entanglement explained simply',
+    'the history of swear words',
+    'dreams vs. memory consolidation',
+    'parallel universes theories',
+    'why pastries taste better in europe',
+    'how planes actually stay in the air',
+    'the psychology of procrastination',
+    'whether aliens would understand human music',
+    'the future of brain–computer interfaces',
+    'why some people crave horror',
+    'how coral reefs communicate',
+    'the mystery of dark matter',
+    'the philosophy of consciousness',
+    'cultural impacts of superhero films',
+    'why we yawn',
+    'micro-habits that change productivity',
+    'origins of common idioms',
+    'the future of renewable energy',
+    'how languages evolve',
+    'the science of attraction',
+    'whether robots can be morally responsible',
+    'the history of the calendar',
+    'why we find certain sounds satisfying (asmr)',
+    'how rockets land themselves (spacex!)',
+    'genetic engineering ethics',
+    'the allure of dystopian fiction',
+    'why cities develop unique "vibes"',
+    'the placebo effect',
+    'how music tempo affects mood',
+    'the physics of rainbows',
+    'why toddlers ask "why" nonstop',
+    'internet culture cycles',
+    'the origins of conspiracy theories',
+    'how coffee became a global obsession',
+    'the limits of human memory',
+    'why board games are making a comeback',
+    'the psychology of collecting things'
   ];
 
-  const generateNewTopic = async () => {
-    console.log('Generating new topic...');
-    setLoadingTopic(true);
-    try {
-      // Add timestamp to prevent caching
-      const response = await fetch(`/api/random-topic?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      });
-      console.log('API Response status:', response.status);
-      const data = await response.json();
-      console.log('API Response data:', data);
-      if (data.topic) {
-        console.log('Setting new topic:', data.topic);
-        setRandomTopic(data.topic);
-      } else {
-        console.log('No topic in response, using fallback');
-        const randomIndex = Math.floor(Math.random() * fallbackTopics.length);
-        setRandomTopic(fallbackTopics[randomIndex]);
-      }
-    } catch (error) {
-      console.error('Failed to generate topic, using fallback:', error);
-      const randomIndex = Math.floor(Math.random() * fallbackTopics.length);
-      setRandomTopic(fallbackTopics[randomIndex]);
-    } finally {
-      setLoadingTopic(false);
-    }
+  const generateNewTopic = () => {
+    const randomIndex = Math.floor(Math.random() * topics.length);
+    setRandomTopic(topics[randomIndex]);
   };
 
   const startRecording = async () => {
@@ -352,23 +369,15 @@ export default function Home() {
       </h1>
       <div className="text-lg mb-8 text-center max-w-2xl relative z-10 font-bold italic leading-relaxed" style={{color: '#AE2D80'}}>
         <p className="mb-2">
-          {loadingTopic ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-              generating scenario...
-            </span>
-          ) : (
-            <>your date is talking about <span className="underline decoration-wavy">{randomTopic}</span></>
-          )}
+          your date is talking about <span className="underline decoration-wavy">{randomTopic}</span>
         </p>
         <button 
           onClick={generateNewTopic}
-          disabled={loadingTopic}
-          className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer disabled:cursor-wait"
+          className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer"
           style={{color: '#AE2D80'}}
           type="button"
         >
-          {loadingTopic ? 'generating...' : 'get new topic'}
+          get new topic
         </button>
       </div>
 
