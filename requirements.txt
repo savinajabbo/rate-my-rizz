@@ -4,9 +4,8 @@ torch==2.3.1+cpu
 torchaudio==2.3.1+cpu
 
 # Rest of dependencies
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
+Flask==3.0.0
+gunicorn==21.2.0
 opencv-python-headless==4.8.1.78
 numpy==1.24.3
 mediapipe==0.10.8
