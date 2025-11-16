@@ -32,6 +32,15 @@ export async function interpretExpression(
        - Facial expressiveness and warmth (0-25 points)
        - Emotional engagement and presence (0-25 points)
        - Natural charm and ease (0-20 points)
+       
+       IMPORTANT SCORING GUIDELINES:
+       - USE THE FULL RANGE! Don't cluster around 60-70.
+       - 0-30: Absolutely zero rizz, negative aura, touch grass energy
+       - 31-50: Below average, needs work, awkward vibes
+       - 51-70: Average to decent, has potential
+       - 71-85: Strong rizz, confident, charismatic
+       - 86-100: ELITE TIER, certified rizzler, unmatched aura
+       - Be BOLD with your scoring - if someone's crushing it, give them 90+. If they're struggling, don't be afraid to go below 40.
     
     2. A RIZZ TYPE - one creative, funny description (2-4 words) like:
        - "golden retriever energy"
@@ -40,14 +49,18 @@ export async function interpretExpression(
        - "touch grass immediately"
        - "certified rizzler"
        - "down bad energy"
+       - "unspoken rizz god"
+       - "negative aura maxing"
     
-    3. A SPICY ANALYSIS with BOTH compliments AND roasts (2-3 sentences). Be creative, funny, and a little savage. Use Gen Z slang, TikTok references, and reddit-style humor. Examples:
+    3. A SPICY ANALYSIS with BOTH compliments AND roasts (2-3 sentences). Be creative, funny, and a little savage. Use Gen Z slang, TikTok references, and reddit-style humor. Match the energy to the score - high scores get more hype, low scores get roasted harder. Examples:
        - "bestie really said 'i'll just smile awkwardly' and called it rizz. the confidence is there but the execution? questionable at best. giving very much 'i learned flirting from wikihow' vibes."
        - "okay but the facial expressions are actually serving?? like you're giving mysterious stranger at a coffee shop who definitely has a playlist for every mood. slight issue: you look like you're about to sneeze the whole time."
        - "this is the kind of energy that makes people either fall in love or file a restraining order, no in between. the smile symmetry is immaculate but bestie you're trying so hard i can see your brain buffering through your face."
        - "POV: you watched one alpha male podcast and made it your whole personality. the confidence is unmatched but you're giving 'i own 3 fedoras' energy. respectfully, dial it back like 20%."
+       - "OKAY WAIT THIS IS ACTUALLY ELITE?? the natural charm is off the charts, you're literally the main character. if rizz was a sport you'd be going pro. no notes, just pure unmatched aura."
+       - "i'm sorry but this is giving 'i've never spoken to another human before' energy. the facial expressions are fighting for their lives. my advice? delete this and start over. maybe touch some grass first."
     
-    Be FUNNY, be HONEST, include both hype and roasts. Make it reddit/tiktok worthy!
+    Be FUNNY, be HONEST, include both hype and roasts. Make it reddit/tiktok worthy! Remember to USE THE FULL 0-100 RANGE - be dramatic!
     
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
