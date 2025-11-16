@@ -195,22 +195,55 @@ export default function Home() {
     formData.append('metrics', JSON.stringify(avgMetrics));
 
     try {
+      console.log('Sending request to /api/process...');
+      console.log('Form data contents:', {
+        video: videoBlob.size + ' bytes',
+        audio: audioBlob.size + ' bytes',
+        aus: Object.keys(avgAUs).length + ' action units',
+        metrics: Object.keys(avgMetrics).length + ' metrics'
+      });
+
       const response = await fetch('/api/process', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown server error' }));
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Server error response:', errorData);
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          const responseText = await response.text();
+          console.error('Raw error response:', responseText);
+          errorData = { error: `Server error: ${response.status} ${response.statusText}. Raw response: ${responseText}` };
+        }
         throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Success response:', data);
       setResults(data);
       setStatus('Analysis complete!');
     } catch (error: any) {
       console.error('Processing error:', error);
       setStatus('Error: ' + error.message);
+      
+      // Also show debug info in the UI
+      setResults({
+        error: error.message,
+        debug: {
+          avgAUs,
+          avgMetrics,
+          ausFrames: ausDataRef.current.length,
+          metricsFrames: metricsDataRef.current.length,
+          videoSize: videoBlob.size,
+          audioSize: audioBlob.size
+        }
+      });
     }
   };
 
@@ -255,6 +288,44 @@ export default function Home() {
           )}
         </div>
 
+        {/* Debug: Show Action Units and Metrics */}
+        {(ausDataRef.current.length > 0 || metricsDataRef.current.length > 0) && (
+          <div className="bg-blue-500/20 backdrop-blur-md rounded-lg p-4 mt-4">
+            <h3 className="text-lg font-semibold text-white mb-2">🔍 Debug Info</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {ausDataRef.current.length > 0 && (
+                <div>
+                  <h4 className="text-white font-medium mb-1">Action Units (Latest):</h4>
+                  <div className="bg-black/30 p-2 rounded text-white/80 max-h-32 overflow-y-auto">
+                    {Object.entries(ausDataRef.current[ausDataRef.current.length - 1] || {}).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span>{key}:</span>
+                        <span>{typeof value === 'number' ? value.toFixed(3) : value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {metricsDataRef.current.length > 0 && (
+                <div>
+                  <h4 className="text-white font-medium mb-1">Metrics (Latest):</h4>
+                  <div className="bg-black/30 p-2 rounded text-white/80 max-h-32 overflow-y-auto">
+                    {Object.entries(metricsDataRef.current[metricsDataRef.current.length - 1] || {}).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span>{key}:</span>
+                        <span>{typeof value === 'number' ? value.toFixed(3) : value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="mt-2 text-xs text-white/60">
+              Captured {ausDataRef.current.length} frames of facial data
+            </div>
+          </div>
+        )}
+
         {results && (
           <div className="bg-white/20 backdrop-blur-md rounded-lg p-6 mt-6">
             <h2 className="text-2xl font-bold text-white mb-4">Your Rizz Analysis</h2>
@@ -265,13 +336,20 @@ export default function Home() {
               </div>
             )}
             {results.analysis && (
-              <div>
+              <div className="mb-4">
                 <h3 className="text-xl font-semibold text-white mb-2">Rizz Analysis:</h3>
                 <pre className="bg-black/30 text-white p-4 rounded-lg whitespace-pre-wrap">
                   {results.analysis}
                 </pre>
               </div>
             )}
+            {/* Debug: Show raw server response */}
+            <details className="mt-4">
+              <summary className="text-white/70 cursor-pointer text-sm">🔧 Debug: Raw Server Response</summary>
+              <pre className="bg-black/50 text-white/70 p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+                {JSON.stringify(results, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
       </div>
