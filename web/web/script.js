@@ -132,7 +132,9 @@ async function sendToServer(videoBlob, audioBlob) {
     formData.append('audio', audioBlob, 'recording.webm');
     
     try {
-        const response = await fetch('/process', {
+        // Try /process first (for FastAPI), fallback to /api/process if needed
+        const apiUrl = '/process';
+        const response = await fetch(apiUrl, {
             method: 'POST',
             body: formData
         });
