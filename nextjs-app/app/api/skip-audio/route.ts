@@ -49,11 +49,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let analysis = 'Analysis unavailable';
+    let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
       console.log('starting ai analysis (no audio)...');
-      analysis = await interpretExpression(aus, metrics);
-      console.log('analysis successful, length:', analysis.length);
+      rizzResult = await interpretExpression(aus, metrics);
+      console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);
       return NextResponse.json(
@@ -71,8 +71,10 @@ export async function POST(request: NextRequest) {
     console.log('skip-audio request completed successfully in', processingTime, 'ms');
 
     return NextResponse.json({
-      transcription: 'Audio transcription skipped for testing - facial analysis only',
-      analysis,
+      transcription: 'audio transcription skipped for testing - facial analysis only',
+      score: rizzResult.score,
+      rizzType: rizzResult.rizzType,
+      analysis: rizzResult.analysis,
       aus,
       metrics,
       processingTime,

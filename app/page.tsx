@@ -78,17 +78,35 @@ export default function Home() {
     generateNewTopic();
   }, []);
 
+  const fallbackTopics = [
+    'vintage motorcycles', 'deep sea creatures', 'conspiracy theories', 'homemade pasta',
+    'space exploration', 'indoor plants', 'true crime podcasts', 'pickle making',
+    'quantum physics', 'pet turtles', 'vintage vinyl', 'urban legends',
+    'coffee brewing', 'ghost stories', 'board games', 'street art',
+    'astronomy', 'cooking disasters', 'weird dreams', 'childhood fears',
+    'favorite conspiracy', 'alien encounters', 'time travel', 'parallel universes'
+  ];
+
   const generateNewTopic = async () => {
+    console.log('Generating new topic...');
     setLoadingTopic(true);
     try {
       const response = await fetch('/api/random-topic');
+      console.log('API Response status:', response.status);
       const data = await response.json();
+      console.log('API Response data:', data);
       if (data.topic) {
+        console.log('Setting new topic:', data.topic);
         setRandomTopic(data.topic);
+      } else {
+        console.log('No topic in response, using fallback');
+        const randomIndex = Math.floor(Math.random() * fallbackTopics.length);
+        setRandomTopic(fallbackTopics[randomIndex]);
       }
     } catch (error) {
-      console.error('Failed to generate topic:', error);
-      setRandomTopic('mysterious topics');
+      console.error('Failed to generate topic, using fallback:', error);
+      const randomIndex = Math.floor(Math.random() * fallbackTopics.length);
+      setRandomTopic(fallbackTopics[randomIndex]);
     } finally {
       setLoadingTopic(false);
     }
@@ -436,11 +454,29 @@ export default function Home() {
 
         {results && (
           <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-8 mt-8 border-2 border-amber-200/60" style={{boxShadow: '0 15px 35px rgba(139,69,19,0.15)'}}>
-            <h2 className="text-3xl font-bold mb-6 text-center font-serif" style={{color: '#AE2D80'}}>your love letter analysis</h2>
+            <h2 className="text-3xl font-bold mb-6 text-center font-serif" style={{color: '#AE2D80'}}>your rizz analysis</h2>
+            
+            {/* Rizz Score Display */}
+            {results.score !== undefined && (
+              <div className="mb-8 text-center">
+                <div className="relative inline-block">
+                  <div className="text-7xl font-bold mb-2" style={{color: '#AE2D80'}}>
+                    {results.score}
+                    <span className="text-3xl">/100</span>
+                  </div>
+                  {results.rizzType && (
+                    <div className="text-xl italic font-bold mt-2" style={{color: '#AE2D80'}}>
+                      "{results.rizzType}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {results.transcription && (
               <div className="mb-6">
                 <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{color: '#AE2D80'}}>
-                  your romantic words:
+                  what you said:
                 </h3>
                 <p className="text-lg leading-relaxed bg-white/50 p-6 rounded-xl border border-amber-200/50 italic font-bold" style={{color: '#AE2D80', boxShadow: 'inset 0 2px 4px rgba(139,69,19,0.1)'}}>{results.transcription?.toLowerCase()}</p>
               </div>
@@ -448,11 +484,11 @@ export default function Home() {
             {results.analysis && (
               <div className="mb-6">
                 <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{color: '#AE2D80'}}>
-                  romance analysis:
+                  the verdict:
                 </h3>
-                <pre className="bg-white/50 p-6 rounded-xl whitespace-pre-wrap text-base leading-relaxed border border-amber-200/50 font-bold" style={{color: '#AE2D80', boxShadow: 'inset 0 2px 4px rgba(139,69,19,0.1)'}}>
+                <p className="bg-white/50 p-6 rounded-xl text-base leading-relaxed border border-amber-200/50 font-bold" style={{color: '#AE2D80', boxShadow: 'inset 0 2px 4px rgba(139,69,19,0.1)'}}>
                   {results.analysis?.toLowerCase()}
-                </pre>
+                </p>
               </div>
             )}
             {/* Debug: Show raw server response */}

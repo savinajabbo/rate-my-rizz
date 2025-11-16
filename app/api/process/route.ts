@@ -1,17 +1,13 @@
-// API route for processing video/audio (Next.js App Router)
-
 import { NextRequest, NextResponse } from 'next/server';
 import { interpretExpression } from '@/lib/openai';
 
-// Note: For Whisper transcription, we'll use OpenAI's Whisper API
-// since running Whisper locally in Node.js is complex
 async function transcribeAudio(audioBlob: Blob): Promise<string> {
   try {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.webm');
     formData.append('model', 'whisper-1');
 
-    console.log('Sending audio to Whisper API, size:', audioBlob.size);
+    console.log('sending audio to whisper api, size:', audioBlob.size);
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -21,64 +17,62 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
       body: formData,
     });
 
-    console.log('Whisper API response status:', response.status);
+    console.log('whisper api response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Whisper API error:', errorText);
+      console.error('whisper api error:', errorText);
       throw new Error(`Transcription failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Whisper API response:', data);
+    console.log('whisper api response:', data);
     return data.text || 'No speech detected.';
   } catch (error: any) {
-    console.error('Transcription error:', error);
+    console.error('transcription error:', error);
     throw new Error(`Audio transcription failed: ${error.message}`);
   }
 }
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log('🚀 API request started at:', new Date().toISOString());
+  console.log('api request started at:', new Date().toISOString());
   
   try {
-    // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
-      console.error('❌ OpenAI API key not configured');
+      console.error('openai api key not configured');
       return NextResponse.json(
         { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.' },
         { status: 500 }
       );
     }
 
-    console.log('📥 Parsing form data...');
+    console.log('parsing form data...');
     const formData = await request.formData();
     
-    console.log('📋 Form data keys:', Array.from(formData.keys()));
+    console.log('form data keys:', Array.from(formData.keys()));
     
     const videoFile = formData.get('video') as File;
     const audioFile = formData.get('audio') as File;
 
-    console.log('📹 Video file:', videoFile ? `${videoFile.name} (${videoFile.size} bytes, ${videoFile.type})` : 'null');
-    console.log('🎵 Audio file:', audioFile ? `${audioFile.name} (${audioFile.size} bytes, ${audioFile.type})` : 'null');
+    console.log('video file:', videoFile ? `${videoFile.name} (${videoFile.size} bytes, ${videoFile.type})` : 'null');
+    console.log('audio file:', audioFile ? `${audioFile.name} (${audioFile.size} bytes, ${audioFile.type})` : 'null');
 
     if (!videoFile || !audioFile) {
-      console.error('❌ Missing files - video:', !!videoFile, 'audio:', !!audioFile);
+      console.error('missing files - video:', !!videoFile, 'audio:', !!audioFile);
       return NextResponse.json(
         { error: 'Missing video or audio file' },
         { status: 400 }
       );
     }
 
-    console.log('Processing files:', { 
+    console.log('processing files:', { 
       videoSize: videoFile.size, 
       audioSize: audioFile.size,
       videoType: videoFile.type,
       audioType: audioFile.type
     });
 
-    // Validate file sizes
     if (videoFile.size === 0 || audioFile.size === 0) {
       return NextResponse.json(
         { error: 'Video or audio file is empty' },
@@ -86,32 +80,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Transcribe audio using OpenAI Whisper API
     let transcription = 'No speech detected.';
     try {
-      console.log('🎵 Starting audio transcription...');
-      // Create a new blob from the file to avoid "body disturbed" issues
+      console.log('starting audio transcription...');
       const audioBuffer = await audioFile.arrayBuffer();
-      console.log('📊 Audio buffer size:', audioBuffer.byteLength);
+      console.log('audio buffer size:', audioBuffer.byteLength);
       
       const audioBlob = new Blob([audioBuffer], { type: audioFile.type || 'audio/webm' });
-      console.log('🔄 Created audio blob, size:', audioBlob.size);
+      console.log('created audio blob, size:', audioBlob.size);
       
       transcription = await transcribeAudio(audioBlob);
-      console.log('✅ Transcription successful:', transcription.substring(0, 100) + '...');
+      console.log('transcription successful:', transcription.substring(0, 100) + '...');
     } catch (transcriptionError: any) {
-      console.error('❌ Transcription failed:', transcriptionError);
-      // Continue without transcription rather than failing completely
+      console.error('transcription failed:', transcriptionError);
       transcription = 'Audio transcription failed: ' + transcriptionError.message;
     }
 
-    // For video processing, we'll process it client-side with MediaPipe
-    // and send the AUs/metrics here. For now, we'll expect them in the request
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
     
-    console.log('Received AUs:', ausString);
-    console.log('Received metrics:', metricsString);
+    console.log('received aus:', ausString);
+    console.log('received metrics:', metricsString);
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
@@ -120,7 +109,7 @@ export async function POST(request: NextRequest) {
       aus = JSON.parse(ausString || '{}');
       metrics = JSON.parse(metricsString || '{}');
     } catch (parseError) {
-      console.error('Failed to parse AUs/metrics:', parseError);
+      console.error('failed to parse aus/metrics:', parseError);
       return NextResponse.json(
         { error: 'Invalid facial analysis data format' },
         { status: 400 }
@@ -137,14 +126,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate analysis
-    let analysis = 'Analysis unavailable';
+    let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
-      console.log('🤖 Starting AI analysis...');
-      analysis = await interpretExpression(aus, metrics);
-      console.log('✅ Analysis successful, length:', analysis.length);
+      console.log('starting ai analysis...');
+      rizzResult = await interpretExpression(aus, metrics);
+      console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
-      console.error('❌ Analysis failed:', analysisError);
+      console.error('analysis failed:', analysisError);
       return NextResponse.json(
         { 
           error: 'AI analysis failed: ' + analysisError.message,
@@ -157,18 +145,20 @@ export async function POST(request: NextRequest) {
     }
 
     const processingTime = Date.now() - startTime;
-    console.log('✅ Request completed successfully in', processingTime, 'ms');
+    console.log('request completed successfully in', processingTime, 'ms');
 
     return NextResponse.json({
       transcription,
-      analysis,
+      score: rizzResult.score,
+      rizzType: rizzResult.rizzType,
+      analysis: rizzResult.analysis,
       aus,
       metrics,
       processingTime
     });
   } catch (error: any) {
     const processingTime = Date.now() - startTime;
-    console.error('❌ Request failed after', processingTime, 'ms:', error);
+    console.error('request failed after', processingTime, 'ms:', error);
     return NextResponse.json({ 
       error: error.message || 'Internal server error',
       details: error.stack || 'No stack trace available',

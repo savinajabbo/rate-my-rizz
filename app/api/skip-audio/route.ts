@@ -1,32 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { interpretExpression } from '@/lib/openai';
 
-// Fallback endpoint that skips audio transcription to isolate the issue
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log('🚀 Skip-audio API request started at:', new Date().toISOString());
+  console.log('skip-audio api request started at:', new Date().toISOString());
   
   try {
-    // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
-      console.error('❌ OpenAI API key not configured');
+      console.error('openai api key not configured');
       return NextResponse.json(
         { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.' },
         { status: 500 }
       );
     }
 
-    console.log('📥 Parsing form data...');
+    console.log('parsing form data...');
     const formData = await request.formData();
     
-    console.log('📋 Form data keys:', Array.from(formData.keys()));
+    console.log('form data keys:', Array.from(formData.keys()));
     
-    // Skip video/audio processing, just get AUs and metrics
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
     
-    console.log('📊 Received AUs:', ausString?.substring(0, 100) + '...');
-    console.log('📊 Received metrics:', metricsString?.substring(0, 100) + '...');
+    console.log('received aus:', ausString?.substring(0, 100) + '...');
+    console.log('received metrics:', metricsString?.substring(0, 100) + '...');
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
@@ -35,7 +32,7 @@ export async function POST(request: NextRequest) {
       aus = JSON.parse(ausString || '{}');
       metrics = JSON.parse(metricsString || '{}');
     } catch (parseError) {
-      console.error('Failed to parse AUs/metrics:', parseError);
+      console.error('failed to parse aus/metrics:', parseError);
       return NextResponse.json(
         { error: 'Invalid facial analysis data format' },
         { status: 400 }
@@ -52,14 +49,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate analysis without audio transcription
-    let analysis = 'Analysis unavailable';
+    let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
-      console.log('🤖 Starting AI analysis (no audio)...');
-      analysis = await interpretExpression(aus, metrics);
-      console.log('✅ Analysis successful, length:', analysis.length);
+      console.log('starting ai analysis (no audio)...');
+      rizzResult = await interpretExpression(aus, metrics);
+      console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
-      console.error('❌ Analysis failed:', analysisError);
+      console.error('analysis failed:', analysisError);
       return NextResponse.json(
         { 
           error: 'AI analysis failed: ' + analysisError.message,
@@ -72,11 +68,13 @@ export async function POST(request: NextRequest) {
     }
 
     const processingTime = Date.now() - startTime;
-    console.log('✅ Skip-audio request completed successfully in', processingTime, 'ms');
+    console.log('skip-audio request completed successfully in', processingTime, 'ms');
 
     return NextResponse.json({
-      transcription: 'Audio transcription skipped for testing - facial analysis only',
-      analysis,
+      transcription: 'audio transcription skipped for testing - facial analysis only',
+      score: rizzResult.score,
+      rizzType: rizzResult.rizzType,
+      analysis: rizzResult.analysis,
       aus,
       metrics,
       processingTime,
@@ -84,7 +82,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     const processingTime = Date.now() - startTime;
-    console.error('❌ Skip-audio request failed after', processingTime, 'ms:', error);
+    console.error('skip-audio request failed after', processingTime, 'ms:', error);
     return NextResponse.json({ 
       error: error.message || 'Internal server error',
       details: error.stack || 'No stack trace available',
