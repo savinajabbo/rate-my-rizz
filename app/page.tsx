@@ -155,9 +155,11 @@ export default function Home() {
 
       const videoRecorder = new MediaRecorder(videoStream, {
         mimeType: 'video/webm;codecs=vp8',
+        videoBitsPerSecond: 250000, // Reduce bitrate to ~250kbps for smaller files
       });
       const audioRecorder = new MediaRecorder(audioStream, {
         mimeType: 'audio/webm',
+        audioBitsPerSecond: 32000, // Reduce audio bitrate to 32kbps
       });
 
       videoChunksRef.current = [];
@@ -231,6 +233,9 @@ export default function Home() {
 
     const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+    console.log('Original video size:', videoBlob.size, 'bytes');
+    console.log('Original audio size:', audioBlob.size, 'bytes');
 
     // Calculate average AUs and metrics
     const avgAUs: Record<string, number> = {};
