@@ -13,6 +13,36 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
   const [randomTopic, setRandomTopic] = useState('mysterious topics');
+
+  // Action Unit descriptions
+  const auDescriptions: Record<string, string> = {
+    'AU01': 'Inner Brow Raiser',
+    'AU02': 'Outer Brow Raiser', 
+    'AU04': 'Brow Lowerer',
+    'AU06': 'Cheek Raiser',
+    'AU07': 'Lid Tightener',
+    'AU09': 'Nose Wrinkler',
+    'AU10': 'Upper Lip Raiser',
+    'AU12': 'Lip Corner Puller',
+    'AU14': 'Dimpler',
+    'AU17': 'Chin Raiser',
+    'AU23': 'Lip Tightener',
+    'AU24': 'Lip Pressor',
+    'AU25': 'Lips Part',
+    'AU26': 'Jaw Drop',
+    'AU45': 'Blink'
+  };
+
+  // Metrics descriptions
+  const metricsDescriptions: Record<string, string> = {
+    'head_tilt': 'Head Tilt Angle',
+    'eye_openness': 'Eye Openness',
+    'smile_symmetry': 'Smile Symmetry',
+    'brow_symmetry': 'Brow Symmetry',
+    'mouth_openness': 'Mouth Openness',
+    'tension_index': 'Facial Tension',
+    'confidence_index': 'Confidence Level'
+  };
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -450,7 +480,7 @@ export default function Home() {
                   <div className="bg-black/30 p-2 rounded max-h-32 overflow-y-auto" style={{color: '#AE2D80'}}>
                     {Object.entries(ausDataRef.current[ausDataRef.current.length - 1] || {}).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
-                        <span>{key}:</span>
+                        <span>{key} ({auDescriptions[key] || 'Unknown'}):</span>
                         <span>{typeof value === 'number' ? value.toFixed(3) : value}</span>
                       </div>
                     ))}
@@ -463,7 +493,7 @@ export default function Home() {
                   <div className="bg-black/30 p-2 rounded max-h-32 overflow-y-auto" style={{color: '#AE2D80'}}>
                     {Object.entries(metricsDataRef.current[metricsDataRef.current.length - 1] || {}).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
-                        <span>{key}:</span>
+                        <span>{key} ({metricsDescriptions[key] || 'Unknown'}):</span>
                         <span>{typeof value === 'number' ? value.toFixed(3) : value}</span>
                       </div>
                     ))}
