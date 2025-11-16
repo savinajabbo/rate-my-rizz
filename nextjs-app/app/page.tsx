@@ -308,13 +308,16 @@ export default function Home() {
       if (!response.ok) {
         let errorData;
         try {
-          errorData = await response.json();
-          console.error('server error response:', errorData);
-        } catch (parseError) {
-          console.error('failed to parse error response:', parseError);
           const responseText = await response.text();
           console.error('raw error response:', responseText);
-          errorData = { error: `Server error: ${response.status} ${response.statusText}. Raw response: ${responseText}` };
+          try {
+            errorData = JSON.parse(responseText);
+          } catch {
+            errorData = { error: `Server error: ${response.status} ${response.statusText}` };
+          }
+        } catch (parseError) {
+          console.error('failed to read error response:', parseError);
+          errorData = { error: `Server error: ${response.status} ${response.statusText}` };
         }
         throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
       }

@@ -1,11 +1,17 @@
 import OpenAI from 'openai';
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error('OPENAI_API_KEY environment variable is not set');
-}
+let client: OpenAI | null = null;
 
-const client = new OpenAI({ apiKey });
+function getClient() {
+  if (!client) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    client = new OpenAI({ apiKey });
+  }
+  return client;
+}
 
 export async function interpretExpression(
   aus: Record<string, number>,
@@ -48,7 +54,7 @@ export async function interpretExpression(
     Do not include any text outside the JSON object.
     `;
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: "json_object" },
@@ -86,7 +92,7 @@ Examples: "pickle making", "quantum physics", "pet turtles", "vintage vinyl", "u
 Return only the topic, nothing else.`;
 
   console.log('Calling OpenAI API...');
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 10,

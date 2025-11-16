@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { interpretExpression } from '@/lib/openai';
 
+// Configure route segment
+export const maxDuration = 60; // Maximum duration in seconds
+export const dynamic = 'force-dynamic'; // Disable static optimization
+
 async function transcribeAudio(audioBlob: Blob): Promise<string> {
   try {
     const formData = new FormData();
