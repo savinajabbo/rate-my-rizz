@@ -1,12 +1,9 @@
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
 import json
+import os
 
-load_dotenv(".env.local")
-API_KEY = os.getenv("OPENAI_API_KEY")
-
-client = OpenAI(api_key=API_KEY)
+api_key = os.environ.get("OPENAI_API_KEY", "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")
+client = OpenAI(api_key=api_key)
 
 def interpret_expression(aus, metrics):
     prompt = f"""

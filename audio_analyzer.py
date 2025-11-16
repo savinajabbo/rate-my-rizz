@@ -1,30 +1,61 @@
 import librosa
 import numpy as np
-import sounddevice as sd
 
-def analyze_audio(audio, sr):
+def analyze_audio(audio_data, sr):
     '''
-    audio: numpy array of audio samples
-    sr: samples rate
+    audio_data: numpy array of audio samples
+    sr: sample rate
     '''
+    
 
-    rms = np.sqrt(np.mean(audio**2))
+    rms = np.sqrt(np.mean(audio_data**2))
+    
 
     pitch, voiced_flag, voiced_probs = librosa.pyin(
-        audio, 
+        audio_data, 
         fmin=80,
-        fmax=300
+        fmax=300,
+        sr=sr
     )
-
     avg_pitch = np.nanmean(pitch)
+    
 
-    centroid = librosa.feature.spectral_centroid(y=audio, sr=sr)
+    centroid = librosa.feature.spectral_centroid(y=audio_data, sr=sr)
     avg_centroid = float(np.mean(centroid))
+    
+    
+    return format_results(rms, avg_pitch, avg_centroid)
 
-    return {
-        "rms": float(rms),
-        "pitch": float(avg_pitch),
-        "centroid": avg_centroid,
-        "clarity": voiced_flag
-    }
+
+def format_results(rms, pitch, centroid):
+    '''Format audio analysis results in a simple readable way'''
+    
+
+    if rms < 0.05:
+        volume = "Quiet"
+    elif rms < 0.15:
+        volume = "Moderate"
+    else:
+        volume = "Loud"
+    
+
+    if np.isnan(pitch):
+        pitch_desc = "No pitch"
+    else:
+        pitch_desc = f"{pitch:.0f} Hz"
+    
+
+    centroid_desc = f"{centroid:.0f} Hz"
+    
+
+    
+    output = f"""
+Volume:   {volume} ({rms:.3f})
+Pitch:    {pitch_desc}
+Centroid: {centroid_desc}
+"""
+    
+    return output
+
+
 

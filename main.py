@@ -4,7 +4,6 @@ import librosa
 import numpy as np
 import sounddevice as sd
 import mediapipe as mp
-# import soundfile as sf 
 import threading
 pending = False
 lock = threading.Lock()
@@ -19,7 +18,39 @@ interpretation_text = "..."
 
 from au_feature import compute_aus
 #from audio_analyzer import analyze_audio, format_results
+sd.default.device = (2, None) 
 
+session_data = {
+    "aus": [],
+    "metrics": [],
+    "timestamps": [],
+}
+
+SESSION_DURATION = 10
+AUDIO_FILENAME = "temp_audio.wav"
+sr = 48000
+channels = 1
+
+def record_audio_blocking(duration):
+    print("Recording audio...")
+    audio = sd.rec(int(duration * sr), samplerate=sr, channels=channels)
+    sd.wait()
+    print("Audio recording complete.")
+    audio_int16 = (audio.flatten() * 32767).astype(np.int16)
+
+    with wave.open(AUDIO_FILENAME, "wb") as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(2)
+        wf.setframerate(sr)
+        wf.writeframes(audio_int16.tobytes())
+    
+    print(f"Audio saved to {AUDIO_FILENAME}")
+    return audio
+
+start_time = time.time()
+
+audio_thread = threading.Thread(target=record_audio_blocking, args=(SESSION_DURATION,), daemon=False)
+audio_thread.start()
 
 mp_face = mp.solutions.face_mesh
 face_mesh = mp_face.FaceMesh(max_num_faces=1, refine_landmarks=True)
@@ -35,11 +66,6 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 
 stream = cv2.VideoCapture(0)
 mp_face = mp.solutions.face_mesh
-
-AUDIO_FILENAME = "temp_audio.wav"
-duration = 30
-sr = 16000
-
 
 
 if not stream.isOpened():
@@ -76,19 +102,19 @@ def interpret_worker(aus, metrics):
         interpretation_text = result
     pending = False
 
-def record_audio():
-    global audio_recording, audio_done
-    audio_recording = sd.rec(int(duration * sr), samplerate=sr, channels=1)
-    sd.wait()
-    with wave.open(AUDIO_FILENAME, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(sr)
-        wf.writeframes((audio_recording.flatten() * 32767).astype(np.int16).tobytes())
-    audio_done = True
-audio_recording = None
-audio_done = False
-threading.Thread(target=record_audio, daemon=True).start()
+# def record_audio():
+#     global audio_recording, audio_done
+#     audio_recording = sd.rec(int(duration * sr), samplerate=sr, channels=1)
+#     sd.wait()
+#     with wave.open(AUDIO_FILENAME, "wb") as wf:
+#         wf.setnchannels(1)
+#         wf.setsampwidth(2)
+#         wf.setframerate(sr)
+#         wf.writeframes((audio_recording.flatten() * 32767).astype(np.int16).tobytes())
+#     audio_done = True
+# audio_recording = None
+# audio_done = False
+# threading.Thread(target=record_audio, daemon=True).start()
 
 face_mesh = mp_face.FaceMesh(
     max_num_faces = 1,
@@ -96,14 +122,14 @@ face_mesh = mp_face.FaceMesh(
 )
 
 
-
-
-
 frame_count = 0
 while True:
     ret, frame = stream.read()
     if not ret:
         print("no more stream")
+        break
+    if time.time() - start_time > SESSION_DURATION:
+        print("session complete")
         break
 
     frame = cv2.flip(frame, 1)
@@ -113,36 +139,13 @@ while True:
     
     if results.multi_face_landmarks:
         landmarks = results.multi_face_landmarks[0].landmark
-        aus = compute_aus(landmarks, w, h)
+        aus = compute_aus(landmarks, frame.shape[1], frame.shape[0])
+        metrics = compute_metrics(landmarks, frame.shape[1], frame.shape[0])
 
-        metrics = compute_metrics(landmarks, w, h)
-
-        if not pending and time.time() - last_interpret_time > 2:
-            pending = True
-            threading.Thread(
-                target=interpret_worker,
-                args=(aus, metrics),
-                daemon=True
-            ).start()
-            last_interpret_time = time.time()
-
-        # y0 = 200
-        # dy = 22
-
-        # for i, line in enumerate(interpretation_text.split('\n')):
-        #     y = y0 + i*dy
-        #     cv2.putText(
-        #         frame,
-        #         line,
-        #         (10, y),
-        #         cv2.FONT_HERSHEY_SIMPLEX,
-        #         0.55,
-        #         (0, 255, 0),
-        #         1,
-        #         cv2.LINE_AA
-        #     )
-        if time.time() - last_interpret_time < 0.2:
-            print(interpretation_text)
+        if isinstance(aus, dict) and isinstance(metrics, dict):
+            session_data["aus"].append(aus)
+            session_data["metrics"].append(metrics)
+            session_data["timestamps"].append(time.time() - start_time)
 
         cv2.putText(
             frame,
@@ -153,83 +156,37 @@ while True:
             (0, 255, 0),
             2
         )
-
-        cv2.putText(
-            frame,
-            f"AU07 (lid tighteb): {aus['AU07']:.2f}",
-            (10, 200),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (0, 255, 0),
-            2
-        )
-        
-
-        brow = eyebrow_raise(landmarks, w, h)
-        #smile = smile_intensity(landmarks, w, h)
-        #eyes = eye_openness(landmarks, w, h)
-
-        cv2.putText(
-            frame,
-            f"Eyebrow: {brow:.3f}",
-            (10, 40),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (0, 255, 0),
-            2
-        )
-
-        x1, y1 = int(landmarks[1].x * w), int(landmarks[1].y * h)
-        x2, y2 = int(landmarks[152].x * w), int(landmarks[152].y * h)
-
-        x1, x2 = min(x1, x2), max(x1, x2)
-        y1, y2 = min(y1, y2), max(y1, y2)
-
-        face_crop = frame[y1:y2, x1:x2]
-
-        # if face_crop.size > 0:
-        #     au12 = aus.get("AU12", 0.0)
-
-        #     cv2.putText(
-        #         frame,
-        #         f"AU12: {au12:.2f}",
-        #         (10, 170),
-        #         cv2.FONT_HERSHEY_SIMPLEX,
-        #         0.7,
-        #         (0, 255, 0),
-        #         2
-        #     )
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    faces = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.3,
-        minNeighbors=5,
-        minSize=(60, 60)
-    )
-
-    # for(x, y, w, h) in faces:
-    #     cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
-        
+ 
     cv2.imshow("webcam", frame)
     if cv2.waitKey(1) == ord('q'):
         break
- 
-    # audio_data = analyze_audio(audio_recording, sr)
 
-    # cv2.putText(
-    #     frame,
-    #     (30, 40),
-    #     cv2.FONT_HERSHEY_SIMPLEX,
-    #     1, 
-    #     (0, 255, 0),
-    #     2
-    # )
-# model = whisper.load_model("tiny")
-# result = model.transcribe(AUDIO_FILENAME, fp16=False, without_timestamps=True)
+audio_thread.join()
 
+print("[WHISPER] Transcribing audio...")
+model = whisper.load_model("tiny.en")
+result = model.transcribe(AUDIO_FILENAME, fp16=False, without_timestamps=True)
+transcribed_text = result["text"]
+print("\n[TRANSCRIPTION]")
+print(transcribed_text)
+print("---------------------------------\n")
+
+def avg_dict_list(dict_list):
+    if not dict_list:
+        return {}
+    keys = dict_list[0].keys()
+    return {
+        k: float(np.mean([d[k] for d in dict_list]))
+        for k in keys
+    }
+
+avg_aus = avg_dict_list(session_data["aus"])
+avg_metrics = avg_dict_list(session_data["metrics"])
+
+report = interpret_expression(avg_aus, avg_metrics)
+print(report)
 
 stream.release()
 cv2.destroyAllWindows()
+cv2.waitKey(200)
 
