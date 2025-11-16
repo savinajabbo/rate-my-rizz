@@ -2,7 +2,6 @@ from openai import OpenAI
 import json
 import os
 
-# Get API key from environment variable
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY environment variable is not set. Please set it before running the application.")
