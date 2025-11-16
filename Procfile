@@ -1,1 +1,1 @@
-web: cd web/web && gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 2 --preload server:app
+web: cd web/web && python -m gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 2 --preload server:app
