@@ -11,6 +11,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #D6C0B3;
+  color: #AE2D80;
+  font-weight: bold;
 }
 
 @keyframes gentle-float {
@@ -45,5 +48,28 @@ body {
   );
   background-size: 200% 100%;
   animation: paper-shimmer 3s ease-in-out infinite;
+}
+
+.gold-button {
+  background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+  border-color: #FFD700;
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+  color: white;
+  font-weight: bold;
+}
+
+.gold-button:hover {
+  transform: scale(1.05);
+}
+
+.gold-button:disabled {
+  background: #9CA3AF;
+  border-color: #9CA3AF;
+  box-shadow: none;
+}
+
+* {
+  color: #AE2D80;
+  font-weight: bold;
 }
 

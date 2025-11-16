@@ -294,7 +294,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden" style={{backgroundColor: '#D6C0B3'}}>
-      <div className="absolute inset-0 opacity-30" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(139,69,19,0.15) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
+      <div className="absolute inset-0 opacity-30 paper-texture" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(139,69,19,0.15) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
       <div className="absolute top-20 left-16 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl"></div>
       <div className="absolute top-40 right-24 w-32 h-32 bg-amber-200/25 rounded-full blur-xl"></div>
       <div className="absolute bottom-32 left-1/3 w-28 h-28 bg-stone-200/20 rounded-full blur-2xl"></div>
@@ -322,12 +322,7 @@ export default function Home() {
           <button
             onClick={startRecording}
             disabled={isRecording}
-            className="px-12 py-4 disabled:from-stone-400 disabled:to-stone-500 text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg transform hover:scale-105 text-xl border-2"
-            style={{
-              background: isRecording ? '#9CA3AF' : 'linear-gradient(135deg, #FFD700, #FFA500, #FF8C00)',
-              borderColor: '#FFD700',
-              boxShadow: '0 8px 20px rgba(255, 215, 0, 0.3)'
-            }}
+            className="px-12 py-4 gold-button text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg text-xl border-2"
           >
             {isRecording ? 'recording...' : 'begin your love letter'}
           </button>

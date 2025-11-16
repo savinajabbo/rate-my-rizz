@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Rate My Rizz',
-  description: 'AI-powered rizz analysis using facial expressions and voice',
+  title: 'rate my rizz',
+  description: 'ai-powered rizz analysis using facial expressions and voice',
 }
 
 export default function RootLayout({
