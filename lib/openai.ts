@@ -34,13 +34,14 @@ export async function interpretExpression(
        - Natural charm and ease (0-20 points)
        
        IMPORTANT SCORING GUIDELINES:
-       - USE THE FULL RANGE! Don't cluster around 60-70.
-       - 0-30: Absolutely zero rizz, negative aura, touch grass energy
-       - 31-50: Below average, needs work, awkward vibes
-       - 51-70: Average to decent, has potential
-       - 71-85: Strong rizz, confident, charismatic
-       - 86-100: ELITE TIER, certified rizzler, unmatched aura
-       - Be BOLD with your scoring - if someone's crushing it, give them 90+. If they're struggling, don't be afraid to go below 40.
+       - BE GENEROUS! Most people should score 65-95. Only truly awkward/zero-effort attempts should go below 60.
+       - 0-40: Absolutely zero rizz, negative aura, touch grass energy (RARE - only for truly terrible attempts)
+       - 41-60: Below average, needs work, awkward vibes (uncommon)
+       - 61-75: Decent rizz, has solid potential, respectable effort
+       - 76-85: Strong rizz, confident, charismatic, above average
+       - 86-95: ELITE TIER, certified rizzler, unmatched aura
+       - 96-100: LEGENDARY STATUS, once-in-a-lifetime rizz god (reserve for truly exceptional)
+       - DEFAULT MINDSET: Start at 70 and adjust up or down based on performance. Be encouraging!
     
     2. A RIZZ TYPE - one creative, funny description (2-4 words) like:
        - "golden retriever energy"
