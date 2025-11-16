@@ -90,7 +90,13 @@ export default function Home() {
     console.log('Generating new topic...');
     setLoadingTopic(true);
     try {
-      const response = await fetch('/api/random-topic');
+      // Add timestamp to prevent caching
+      const response = await fetch(`/api/random-topic?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       console.log('API Response status:', response.status);
       const data = await response.json();
       console.log('API Response data:', data);
