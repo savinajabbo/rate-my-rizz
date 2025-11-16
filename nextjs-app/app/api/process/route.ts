@@ -20,9 +20,14 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
     console.log('whisper api response status:', response.status);
 
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorText = '';
+      try {
+        errorText = await response.text();
+      } catch (e) {
+        errorText = 'Could not read error response';
+      }
       console.error('whisper api error:', errorText);
-      throw new Error(`Transcription failed: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`Transcription failed: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
