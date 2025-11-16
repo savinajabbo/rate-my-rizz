@@ -39,9 +39,13 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  console.log('🚀 API request started at:', new Date().toISOString());
+  
   try {
     // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
+      console.error('❌ OpenAI API key not configured');
       return NextResponse.json(
         { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.' },
         { status: 500 }
@@ -123,10 +127,11 @@ export async function POST(request: NextRequest) {
     // Generate analysis
     let analysis = 'Analysis unavailable';
     try {
+      console.log('🤖 Starting AI analysis...');
       analysis = await interpretExpression(aus, metrics);
-      console.log('Analysis successful');
+      console.log('✅ Analysis successful, length:', analysis.length);
     } catch (analysisError: any) {
-      console.error('Analysis failed:', analysisError);
+      console.error('❌ Analysis failed:', analysisError);
       return NextResponse.json(
         { 
           error: 'AI analysis failed: ' + analysisError.message,
@@ -138,17 +143,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const processingTime = Date.now() - startTime;
+    console.log('✅ Request completed successfully in', processingTime, 'ms');
+
     return NextResponse.json({
       transcription,
       analysis,
       aus,
       metrics,
+      processingTime
     });
   } catch (error: any) {
-    console.error('Error processing request:', error);
+    const processingTime = Date.now() - startTime;
+    console.error('❌ Request failed after', processingTime, 'ms:', error);
     return NextResponse.json({ 
       error: error.message || 'Internal server error',
-      details: error.stack || 'No stack trace available'
+      details: error.stack || 'No stack trace available',
+      processingTime
     }, { status: 500 });
   }
 }

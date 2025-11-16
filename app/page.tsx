@@ -11,6 +11,7 @@ export default function Home() {
   const [status, setStatus] = useState('Camera ready! Click "Start Recording" to begin.');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(10);
+  const [processingStep, setProcessingStep] = useState('');
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -143,6 +144,7 @@ export default function Home() {
 
     setIsRecording(false);
     setStatus('Processing your rizz...');
+    setProcessingStep('Preparing files...');
 
     const videoStopped = new Promise<void>((resolve) => {
       mediaRecorderRef.current!.video.onstop = () => resolve();
@@ -195,6 +197,7 @@ export default function Home() {
     formData.append('metrics', JSON.stringify(avgMetrics));
 
     try {
+      setProcessingStep('Sending to server...');
       console.log('Sending request to /api/process...');
       console.log('Form data contents:', {
         video: videoBlob.size + ' bytes',
@@ -203,10 +206,22 @@ export default function Home() {
         metrics: Object.keys(avgMetrics).length + ' metrics'
       });
 
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        setProcessingStep('Request timed out...');
+        controller.abort();
+      }, 60000); // 60 second timeout
+
+      setProcessingStep('Analyzing audio and facial expressions...');
       const response = await fetch('/api/process', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+      setProcessingStep('Processing response...');
 
       console.log('Response status:', response.status, response.statusText);
 
@@ -228,20 +243,32 @@ export default function Home() {
       console.log('Success response:', data);
       setResults(data);
       setStatus('Analysis complete!');
+      setProcessingStep('');
     } catch (error: any) {
       console.error('Processing error:', error);
-      setStatus('Error: ' + error.message);
+      
+      let errorMessage = error.message;
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timed out after 60 seconds. The server may be overloaded.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error: Unable to connect to server.';
+      }
+      
+      setStatus('Error: ' + errorMessage);
+      setProcessingStep('');
       
       // Also show debug info in the UI
       setResults({
-        error: error.message,
+        error: errorMessage,
         debug: {
           avgAUs,
           avgMetrics,
           ausFrames: ausDataRef.current.length,
           metricsFrames: metricsDataRef.current.length,
           videoSize: videoBlob.size,
-          audioSize: audioBlob.size
+          audioSize: audioBlob.size,
+          errorType: error.name,
+          timestamp: new Date().toISOString()
         }
       });
     }
@@ -284,6 +311,14 @@ export default function Home() {
             <div className="mt-2">
               <div className="text-2xl font-bold text-red-400">{timeLeft}</div>
               <div className="text-sm text-white/70">seconds remaining</div>
+            </div>
+          )}
+          {processingStep && (
+            <div className="mt-2">
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="text-sm text-white/80">{processingStep}</div>
+              </div>
             </div>
           )}
         </div>
