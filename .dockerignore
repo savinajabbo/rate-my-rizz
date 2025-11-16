@@ -20,4 +20,6 @@ ENV/
 *.mp3
 .DS_Store
 *.log
-
+temp_audio.wav
+models/
+__pycache__/

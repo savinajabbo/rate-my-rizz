@@ -1,3 +1,9 @@
+# Install CPU-only PyTorch first (before whisper to avoid CUDA version)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1+cpu
+torchaudio==2.3.1+cpu
+
+# Rest of dependencies
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
