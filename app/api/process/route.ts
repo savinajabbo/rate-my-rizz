@@ -6,24 +6,36 @@ import { interpretExpression } from '@/lib/openai';
 // Note: For Whisper transcription, we'll use OpenAI's Whisper API
 // since running Whisper locally in Node.js is complex
 async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', audioBlob, 'audio.webm');
-  formData.append('model', 'whisper-1');
+  try {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.webm');
+    formData.append('model', 'whisper-1');
 
-  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: formData,
-  });
+    console.log('Sending audio to Whisper API, size:', audioBlob.size);
 
-  if (!response.ok) {
-    throw new Error('Transcription failed');
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: formData,
+    });
+
+    console.log('Whisper API response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Whisper API error:', errorText);
+      throw new Error(`Transcription failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Whisper API response:', data);
+    return data.text || 'No speech detected.';
+  } catch (error: any) {
+    console.error('Transcription error:', error);
+    throw new Error(`Audio transcription failed: ${error.message}`);
   }
-
-  const data = await response.json();
-  return data.text || 'No speech detected.';
 }
 
 export async function POST(request: NextRequest) {
@@ -54,11 +66,21 @@ export async function POST(request: NextRequest) {
       audioType: audioFile.type
     });
 
+    // Validate file sizes
+    if (videoFile.size === 0 || audioFile.size === 0) {
+      return NextResponse.json(
+        { error: 'Video or audio file is empty' },
+        { status: 400 }
+      );
+    }
+
     // Transcribe audio using OpenAI Whisper API
     let transcription = 'No speech detected.';
     try {
-      const audioBlob = await audioFile.arrayBuffer();
-      transcription = await transcribeAudio(new Blob([audioBlob]));
+      // Create a new blob from the file to avoid "body disturbed" issues
+      const audioBuffer = await audioFile.arrayBuffer();
+      const audioBlob = new Blob([audioBuffer], { type: audioFile.type || 'audio/webm' });
+      transcription = await transcribeAudio(audioBlob);
       console.log('Transcription successful:', transcription);
     } catch (transcriptionError: any) {
       console.error('Transcription failed:', transcriptionError);
