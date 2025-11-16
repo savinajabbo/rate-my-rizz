@@ -1,5 +1,3 @@
-// Action Unit feature computation (translated from Python)
-
 const LEFT_EYE_TOP = 159;
 const LEFT_EYE_BOTTOM = 145;
 const RIGHT_EYE_TOP = 386;
