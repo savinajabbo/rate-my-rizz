@@ -10,6 +10,8 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState('Camera ready! Click "Start Recording" to begin.');
   const [results, setResults] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState(10);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
@@ -110,8 +112,21 @@ export default function Home() {
 
       mediaRecorderRef.current = { video: videoRecorder, audio: audioRecorder };
       setIsRecording(true);
-      setStatus('Recording... Click "Stop Recording" when done.');
+      setTimeLeft(10);
+      setStatus('Recording... 10 seconds remaining');
       setResults(null);
+
+      // Start 10-second countdown
+      recordingTimerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            stopRecording();
+            return 0;
+          }
+          setStatus(`Recording... ${prev - 1} seconds remaining`);
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error: any) {
       setStatus('Error: ' + error.message);
     }
@@ -119,6 +134,12 @@ export default function Home() {
 
   const stopRecording = async () => {
     if (!mediaRecorderRef.current) return;
+
+    // Clear the timer
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
 
     setIsRecording(false);
     setStatus('Processing your rizz...');
@@ -180,13 +201,15 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Server error: ' + response.statusText);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown server error' }));
+        throw new Error(errorData.error || `Server error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       setResults(data);
       setStatus('Analysis complete!');
     } catch (error: any) {
+      console.error('Processing error:', error);
       setStatus('Error: ' + error.message);
     }
   };
@@ -224,6 +247,12 @@ export default function Home() {
 
         <div className="text-center text-white mb-6">
           <p className="text-lg">{status}</p>
+          {isRecording && (
+            <div className="mt-2">
+              <div className="text-2xl font-bold text-red-400">{timeLeft}</div>
+              <div className="text-sm text-white/70">seconds remaining</div>
+            </div>
+          )}
         </div>
 
         {results && (
