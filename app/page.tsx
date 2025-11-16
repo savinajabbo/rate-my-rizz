@@ -189,10 +189,13 @@ export default function Home() {
       });
     }
 
-    // Send to server
+    // Send to server - Create fresh blobs to avoid "body disturbed" error
+    const freshVideoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+    const freshAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    
     const formData = new FormData();
-    formData.append('video', videoBlob, 'recording.webm');
-    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('video', freshVideoBlob, 'recording.webm');
+    formData.append('audio', freshAudioBlob, 'recording.webm');
     formData.append('aus', JSON.stringify(avgAUs));
     formData.append('metrics', JSON.stringify(avgMetrics));
 
@@ -200,10 +203,12 @@ export default function Home() {
       setProcessingStep('Sending to server...');
       console.log('Sending request to /api/process...');
       console.log('Form data contents:', {
-        video: videoBlob.size + ' bytes',
-        audio: audioBlob.size + ' bytes',
+        video: freshVideoBlob.size + ' bytes',
+        audio: freshAudioBlob.size + ' bytes',
         aus: Object.keys(avgAUs).length + ' action units',
-        metrics: Object.keys(avgMetrics).length + ' metrics'
+        metrics: Object.keys(avgMetrics).length + ' metrics',
+        videoChunks: videoChunksRef.current.length,
+        audioChunks: audioChunksRef.current.length
       });
 
       // Add timeout to prevent hanging
@@ -214,11 +219,30 @@ export default function Home() {
       }, 60000); // 60 second timeout
 
       setProcessingStep('Analyzing audio and facial expressions...');
-      const response = await fetch('/api/process', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
+      
+      // Try the main endpoint first, fallback to skip-audio if it fails
+      let response;
+      try {
+        response = await fetch('/api/process', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+      } catch (mainError) {
+        console.warn('Main API failed, trying skip-audio fallback:', mainError);
+        setProcessingStep('Retrying without audio transcription...');
+        
+        // Create a simpler FormData with just AUs and metrics
+        const fallbackFormData = new FormData();
+        fallbackFormData.append('aus', JSON.stringify(avgAUs));
+        fallbackFormData.append('metrics', JSON.stringify(avgMetrics));
+        
+        response = await fetch('/api/skip-audio', {
+          method: 'POST',
+          body: fallbackFormData,
+          signal: controller.signal,
+        });
+      }
 
       clearTimeout(timeoutId);
       setProcessingStep('Processing response...');

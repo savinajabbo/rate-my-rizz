@@ -52,11 +52,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('📥 Parsing form data...');
     const formData = await request.formData();
+    
+    console.log('📋 Form data keys:', Array.from(formData.keys()));
+    
     const videoFile = formData.get('video') as File;
     const audioFile = formData.get('audio') as File;
 
+    console.log('📹 Video file:', videoFile ? `${videoFile.name} (${videoFile.size} bytes, ${videoFile.type})` : 'null');
+    console.log('🎵 Audio file:', audioFile ? `${audioFile.name} (${audioFile.size} bytes, ${audioFile.type})` : 'null');
+
     if (!videoFile || !audioFile) {
+      console.error('❌ Missing files - video:', !!videoFile, 'audio:', !!audioFile);
       return NextResponse.json(
         { error: 'Missing video or audio file' },
         { status: 400 }
@@ -81,13 +89,18 @@ export async function POST(request: NextRequest) {
     // Transcribe audio using OpenAI Whisper API
     let transcription = 'No speech detected.';
     try {
+      console.log('🎵 Starting audio transcription...');
       // Create a new blob from the file to avoid "body disturbed" issues
       const audioBuffer = await audioFile.arrayBuffer();
+      console.log('📊 Audio buffer size:', audioBuffer.byteLength);
+      
       const audioBlob = new Blob([audioBuffer], { type: audioFile.type || 'audio/webm' });
+      console.log('🔄 Created audio blob, size:', audioBlob.size);
+      
       transcription = await transcribeAudio(audioBlob);
-      console.log('Transcription successful:', transcription);
+      console.log('✅ Transcription successful:', transcription.substring(0, 100) + '...');
     } catch (transcriptionError: any) {
-      console.error('Transcription failed:', transcriptionError);
+      console.error('❌ Transcription failed:', transcriptionError);
       // Continue without transcription rather than failing completely
       transcription = 'Audio transcription failed: ' + transcriptionError.message;
     }
