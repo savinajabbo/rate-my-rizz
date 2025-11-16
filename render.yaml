@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: rizz
+    name: rate-my-rizz
     env: python
-    buildCommand: chmod +x build.sh && ./build.sh || pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
-    startCommand: cd web/web && gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 2 server:app
+    pythonVersion: "3.11"
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: OPENAI_API_KEY
         sync: false
