@@ -11,6 +11,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #D6C0B3;
+  color: #AE2D80;
+  font-weight: bold;
 }
 
 /* Love Island inspired animations */
@@ -30,5 +33,62 @@ body {
 
 .float-animation {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+@keyframes romantic-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(139, 69, 19, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(139, 69, 19, 0.4); }
+}
+
+@keyframes paper-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.romantic-glow {
+  animation: romantic-glow 3s ease-in-out infinite;
+}
+
+.gentle-float {
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.paper-texture {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: paper-shimmer 3s ease-in-out infinite;
+}
+
+.gold-button {
+  background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+  border-color: #FFD700;
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+  color: white;
+  font-weight: bold;
+}
+
+.gold-button:hover {
+  transform: scale(1.05);
+}
+
+.gold-button:disabled {
+  background: #9CA3AF;
+  border-color: #9CA3AF;
+  box-shadow: none;
+}
+
+* {
+  color: #AE2D80;
+  font-weight: bold;
 }
 

@@ -8,7 +8,7 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('Camera ready! Click "Start Recording" to begin.');
+  const [status, setStatus] = useState('camera ready! click "start recording" to begin.');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(10);
   const [processingStep, setProcessingStep] = useState('');
@@ -114,7 +114,7 @@ export default function Home() {
       mediaRecorderRef.current = { video: videoRecorder, audio: audioRecorder };
       setIsRecording(true);
       setTimeLeft(10);
-      setStatus('Recording... 10 seconds remaining');
+      setStatus('recording... 10 seconds remaining');
       setResults(null);
 
       // Start 10-second countdown
@@ -124,12 +124,12 @@ export default function Home() {
             stopRecording();
             return 0;
           }
-          setStatus(`Recording... ${prev - 1} seconds remaining`);
+          setStatus(`recording... ${prev - 1} seconds remaining`);
           return prev - 1;
         });
       }, 1000);
     } catch (error: any) {
-      setStatus('Error: ' + error.message);
+      setStatus('error: ' + error.message.toLowerCase());
     }
   };
 
@@ -143,8 +143,8 @@ export default function Home() {
     }
 
     setIsRecording(false);
-    setStatus('Processing your rizz...');
-    setProcessingStep('Preparing files...');
+    setStatus('processing your rizz...');
+    setProcessingStep('preparing files...');
 
     const videoStopped = new Promise<void>((resolve) => {
       mediaRecorderRef.current!.video.onstop = () => resolve();
@@ -160,7 +160,7 @@ export default function Home() {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (videoChunksRef.current.length === 0 || audioChunksRef.current.length === 0) {
-      setStatus('Error: No recording data captured.');
+        setStatus('error: no recording data captured.');
       return;
     }
 
@@ -200,7 +200,7 @@ export default function Home() {
     formData.append('metrics', JSON.stringify(avgMetrics));
 
     try {
-      setProcessingStep('Sending to server...');
+      setProcessingStep('sending to server...');
       console.log('Sending request to /api/process...');
       console.log('Form data contents:', {
         video: freshVideoBlob.size + ' bytes',
@@ -214,11 +214,11 @@ export default function Home() {
       // Add timeout to prevent hanging
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        setProcessingStep('Request timed out...');
+        setProcessingStep('request timed out...');
         controller.abort();
       }, 60000); // 60 second timeout
 
-      setProcessingStep('Analyzing audio and facial expressions...');
+      setProcessingStep('analyzing audio and facial expressions...');
       
       // Try the main endpoint first, fallback to skip-audio if it fails
       let response;
@@ -230,7 +230,7 @@ export default function Home() {
         });
       } catch (mainError) {
         console.warn('Main API failed, trying skip-audio fallback:', mainError);
-        setProcessingStep('Retrying without audio transcription...');
+        setProcessingStep('retrying without audio transcription...');
         
         // Create a simpler FormData with just AUs and metrics
         const fallbackFormData = new FormData();
@@ -245,7 +245,7 @@ export default function Home() {
       }
 
       clearTimeout(timeoutId);
-      setProcessingStep('Processing response...');
+      setProcessingStep('processing response...');
 
       console.log('Response status:', response.status, response.statusText);
 
@@ -266,12 +266,12 @@ export default function Home() {
       const data = await response.json();
       console.log('Success response:', data);
       setResults(data);
-      setStatus('Analysis complete! 🎉');
+      setStatus('analysis complete!');
       setProcessingStep('');
       
       // Force UI update
       setTimeout(() => {
-        setStatus('Ready for another rizz check!');
+        setStatus('ready for another rizz check!');
       }, 2000);
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -283,7 +283,7 @@ export default function Home() {
         errorMessage = 'Network error: Unable to connect to server.';
       }
       
-      setStatus('Error: ' + errorMessage);
+      setStatus('error: ' + errorMessage.toLowerCase());
       setProcessingStep('');
       
       // Also show debug info in the UI
@@ -304,26 +304,28 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-400 via-coral-400 to-orange-500 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      {/* Tropical background elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-300/20 via-coral-300/20 to-orange-400/20"></div>
-      <div className="absolute top-10 left-10 w-32 h-32 bg-pink-300/30 rounded-full blur-xl"></div>
-      <div className="absolute top-32 right-20 w-24 h-24 bg-orange-300/40 rounded-full blur-lg"></div>
-      <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-coral-300/25 rounded-full blur-2xl"></div>
-      <h1 className="text-6xl font-bold text-white mb-8 drop-shadow-2xl relative z-10 font-serif tracking-wide">
-        💕 Rate My Rizz 💕
+    <main className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden" style={{backgroundColor: '#D6C0B3'}}>
+      <div className="absolute inset-0 opacity-30 paper-texture" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(139,69,19,0.15) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
+      <div className="absolute top-20 left-16 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl"></div>
+      <div className="absolute top-40 right-24 w-32 h-32 bg-amber-200/25 rounded-full blur-xl"></div>
+      <div className="absolute bottom-32 left-1/3 w-28 h-28 bg-stone-200/20 rounded-full blur-2xl"></div>
+      <div className="absolute inset-0 shadow-inner" style={{boxShadow: 'inset 0 0 100px rgba(139,69,19,0.1)'}}></div>
+      <h1 className="text-6xl font-bold mb-6 relative z-10 font-serif tracking-wide text-center" style={{color: '#AE2D80'}}>
+        rate my rizz
       </h1>
-      <p className="text-xl text-white/90 mb-6 text-center max-w-2xl relative z-10 font-light">
-        Welcome to the villa! Let's see if you've got that Love Island charm ✨
-      </p>
+      <div className="text-lg mb-8 text-center max-w-2xl relative z-10 font-bold italic leading-relaxed" style={{color: '#AE2D80'}}>
+        <p className="mb-2">"a romantic invitation to discover your charm..."</p>
+        <p className="text-base">let the ocean breeze carry your words to my heart</p>
+      </div>
 
-      <div className="bg-white/15 backdrop-blur-xl rounded-3xl p-8 max-w-4xl w-full shadow-2xl border border-white/20 relative z-10">
+      <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-10 max-w-4xl w-full shadow-xl border-2 border-amber-200/50 relative z-10" style={{boxShadow: '0 25px 50px -12px rgba(139,69,19,0.25), inset 0 1px 0 rgba(255,255,255,0.6)'}}>
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
-          className="w-full max-w-2xl mx-auto rounded-2xl border-4 border-gradient-to-r from-pink-300 to-orange-300 mb-6 shadow-xl"
+          className="w-full max-w-2xl mx-auto rounded-xl border-4 border-amber-300/60 mb-8 shadow-lg"
+          style={{boxShadow: '0 10px 25px rgba(139,69,19,0.2)'}}
         />
         <canvas ref={canvasRef} className="hidden" />
 
@@ -331,25 +333,25 @@ export default function Home() {
           <button
             onClick={startRecording}
             disabled={isRecording}
-            className="px-12 py-4 bg-gradient-to-r from-pink-500 via-coral-500 to-orange-500 hover:from-pink-600 hover:via-coral-600 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg transform hover:scale-105 text-xl"
+            className="px-12 py-4 gold-button text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg text-xl border-2"
           >
-            {isRecording ? '🔴 Recording...' : '💕 Start Your Rizz Check'}
+            {isRecording ? 'recording...' : 'begin your love letter'}
           </button>
         </div>
 
-        <div className="text-center text-white mb-6">
-          <p className="text-lg font-medium">{status}</p>
+        <div className="text-center mb-8" style={{color: '#AE2D80'}}>
+          <p className="text-lg font-bold">{status.toLowerCase()}</p>
           {isRecording && (
             <div className="mt-4">
-              <div className="text-4xl font-bold text-white animate-pulse">{timeLeft}</div>
-              <div className="text-lg text-white/90 font-light">seconds of pure rizz left 🔥</div>
+              <div className="text-4xl font-bold animate-pulse" style={{color: '#AE2D80'}}>{timeLeft}</div>
+              <div className="text-lg font-bold italic" style={{color: '#AE2D80'}}>seconds of heartfelt words remaining</div>
             </div>
           )}
           {processingStep && !results && (
             <div className="mt-4">
               <div className="flex items-center justify-center gap-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                <div className="text-lg text-white/90 font-light">{processingStep}</div>
+                <div className="text-lg font-bold italic" style={{color: '#AE2D80'}}>{processingStep.toLowerCase()}</div>
               </div>
             </div>
           )}
@@ -358,12 +360,12 @@ export default function Home() {
         {/* Debug: Show Action Units and Metrics */}
         {(ausDataRef.current.length > 0 || metricsDataRef.current.length > 0) && (
           <div className="bg-blue-500/20 backdrop-blur-md rounded-lg p-4 mt-4">
-            <h3 className="text-lg font-semibold text-white mb-2">🔍 Debug Info</h3>
+            <h3 className="text-lg font-bold mb-2" style={{color: '#AE2D80'}}>debug info</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               {ausDataRef.current.length > 0 && (
                 <div>
-                  <h4 className="text-white font-medium mb-1">Action Units (Latest):</h4>
-                  <div className="bg-black/30 p-2 rounded text-white/80 max-h-32 overflow-y-auto">
+                  <h4 className="font-bold mb-1" style={{color: '#AE2D80'}}>action units (latest):</h4>
+                  <div className="bg-black/30 p-2 rounded max-h-32 overflow-y-auto" style={{color: '#AE2D80'}}>
                     {Object.entries(ausDataRef.current[ausDataRef.current.length - 1] || {}).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span>{key}:</span>
@@ -375,8 +377,8 @@ export default function Home() {
               )}
               {metricsDataRef.current.length > 0 && (
                 <div>
-                  <h4 className="text-white font-medium mb-1">Metrics (Latest):</h4>
-                  <div className="bg-black/30 p-2 rounded text-white/80 max-h-32 overflow-y-auto">
+                  <h4 className="font-bold mb-1" style={{color: '#AE2D80'}}>metrics (latest):</h4>
+                  <div className="bg-black/30 p-2 rounded max-h-32 overflow-y-auto" style={{color: '#AE2D80'}}>
                     {Object.entries(metricsDataRef.current[metricsDataRef.current.length - 1] || {}).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span>{key}:</span>
@@ -387,37 +389,37 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <div className="mt-2 text-xs text-white/60">
-              Captured {ausDataRef.current.length} frames of facial data
+            <div className="mt-2 text-xs" style={{color: '#AE2D80'}}>
+              captured {ausDataRef.current.length} frames of facial data
             </div>
           </div>
         )}
 
         {results && (
-          <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 mt-6 border border-white/30">
-            <h2 className="text-3xl font-bold text-white mb-6 text-center font-serif">💕 Your Rizz Analysis 💕</h2>
+          <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-8 mt-8 border-2 border-amber-200/60" style={{boxShadow: '0 15px 35px rgba(139,69,19,0.15)'}}>
+            <h2 className="text-3xl font-bold mb-6 text-center font-serif" style={{color: '#AE2D80'}}>your love letter analysis</h2>
             {results.transcription && (
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                  🗣️ What you said:
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{color: '#AE2D80'}}>
+                  your romantic words:
                 </h3>
-                <p className="text-white/90 text-lg leading-relaxed bg-black/20 p-4 rounded-xl">{results.transcription}</p>
+                <p className="text-lg leading-relaxed bg-white/50 p-6 rounded-xl border border-amber-200/50 italic font-bold" style={{color: '#AE2D80', boxShadow: 'inset 0 2px 4px rgba(139,69,19,0.1)'}}>{results.transcription?.toLowerCase()}</p>
               </div>
             )}
             {results.analysis && (
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                  🔥 Rizz Analysis:
+                <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{color: '#AE2D80'}}>
+                  romance analysis:
                 </h3>
-                <pre className="bg-black/30 text-white p-6 rounded-xl whitespace-pre-wrap text-base leading-relaxed border border-white/20">
-                  {results.analysis}
+                <pre className="bg-white/50 p-6 rounded-xl whitespace-pre-wrap text-base leading-relaxed border border-amber-200/50 font-bold" style={{color: '#AE2D80', boxShadow: 'inset 0 2px 4px rgba(139,69,19,0.1)'}}>
+                  {results.analysis?.toLowerCase()}
                 </pre>
               </div>
             )}
             {/* Debug: Show raw server response */}
             <details className="mt-4">
-              <summary className="text-white/70 cursor-pointer text-sm">🔧 Debug: Raw Server Response</summary>
-              <pre className="bg-black/50 text-white/70 p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+              <summary className="cursor-pointer text-sm font-bold" style={{color: '#AE2D80'}}>debug: raw server response</summary>
+              <pre className="bg-black/50 p-2 rounded mt-2 text-xs overflow-auto max-h-40 font-bold" style={{color: '#AE2D80'}}>
                 {JSON.stringify(results, null, 2)}
               </pre>
             </details>
