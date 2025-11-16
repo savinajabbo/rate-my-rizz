@@ -39,3 +39,24 @@ export async function interpretExpression(
   return response.choices[0].message.content || 'Analysis unavailable';
 }
 
+export async function generateRandomDateTopic(): Promise<string> {
+  const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. It should be:
+- Just 1-3 words (like "vintage motorcycles", "deep sea creatures", "conspiracy theories", "homemade pasta", "space exploration", "indoor plants", "true crime podcasts", etc.)
+- Something that could lead to an interesting conversation
+- Can be quirky, nerdy, or completely random
+- Don't include any explanation, just return the topic
+
+Examples: "pickle making", "quantum physics", "pet turtles", "vintage vinyl", "urban legends"
+
+Return only the topic, nothing else.`;
+
+  const response = await client.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 10,
+    temperature: 1.2, // Higher temperature for more randomness
+  });
+
+  return response.choices[0].message.content?.trim() || 'mysterious topics';
+}
+

@@ -8,10 +8,12 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('camera ready! click "start recording" to begin.');
+  const [status, setStatus] = useState('camera ready! click "begin your love letter" to start your 30-second rizz check.');
   const [results, setResults] = useState<any>(null);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
+  const [randomTopic, setRandomTopic] = useState('mysterious topics');
+  const [loadingTopic, setLoadingTopic] = useState(false);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,6 +73,27 @@ export default function Home() {
     };
   }, [isRecording]);
 
+  // Generate random topic on component mount
+  useEffect(() => {
+    generateNewTopic();
+  }, []);
+
+  const generateNewTopic = async () => {
+    setLoadingTopic(true);
+    try {
+      const response = await fetch('/api/random-topic');
+      const data = await response.json();
+      if (data.topic) {
+        setRandomTopic(data.topic);
+      }
+    } catch (error) {
+      console.error('Failed to generate topic:', error);
+      setRandomTopic('mysterious topics');
+    } finally {
+      setLoadingTopic(false);
+    }
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -113,8 +136,8 @@ export default function Home() {
 
       mediaRecorderRef.current = { video: videoRecorder, audio: audioRecorder };
       setIsRecording(true);
-      setTimeLeft(10);
-      setStatus('recording... 10 seconds remaining');
+      setTimeLeft(30);
+      setStatus('recording... 30 seconds remaining');
       setResults(null);
 
       // Start 10-second countdown
@@ -314,8 +337,24 @@ export default function Home() {
         rate my rizz
       </h1>
       <div className="text-lg mb-8 text-center max-w-2xl relative z-10 font-bold italic leading-relaxed" style={{color: '#AE2D80'}}>
-        <p className="mb-2">"a romantic invitation to discover your charm..."</p>
-        <p className="text-base">let the ocean breeze carry your words to my heart</p>
+        <p className="mb-2">
+          {loadingTopic ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+              generating scenario...
+            </span>
+          ) : (
+            <>your date is talking about <span className="underline decoration-wavy">{randomTopic}</span></>
+          )}
+        </p>
+        <button 
+          onClick={generateNewTopic}
+          disabled={loadingTopic}
+          className="text-sm opacity-70 hover:opacity-100 transition-opacity underline"
+          style={{color: '#AE2D80'}}
+        >
+          {loadingTopic ? 'generating...' : 'get new topic'}
+        </button>
       </div>
 
       <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-10 max-w-4xl w-full shadow-xl border-2 border-amber-200/50 relative z-10" style={{boxShadow: '0 25px 50px -12px rgba(139,69,19,0.25), inset 0 1px 0 rgba(255,255,255,0.6)'}}>

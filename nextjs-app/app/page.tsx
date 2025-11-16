@@ -8,7 +8,7 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('Camera ready! Click "Start Recording" to begin.');
+  const [status, setStatus] = useState('click "start recording" to begin...');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(10);
   const [processingStep, setProcessingStep] = useState('');
@@ -324,7 +324,7 @@ export default function Home() {
             disabled={isRecording}
             className="px-12 py-4 gold-button text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg text-xl border-2"
           >
-            {isRecording ? 'recording...' : 'begin your love letter'}
+            {isRecording ? 'recording...' : 'am i a rizzler?'}
           </button>
         </div>
 
