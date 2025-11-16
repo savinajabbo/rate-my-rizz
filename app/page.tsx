@@ -161,9 +161,37 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = () => {
-    const randomIndex = Math.floor(Math.random() * topics.length);
-    setRandomTopic(topics[randomIndex]);
+  const generateNewTopic = async () => {
+    try {
+      const response = await fetch('/api/random-topic', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.topic) {
+          // Ensure the topic is lowercase
+          setRandomTopic(data.topic.toLowerCase());
+        } else {
+          // Fallback to random topic from list if API fails
+          const randomIndex = Math.floor(Math.random() * topics.length);
+          setRandomTopic(topics[randomIndex]);
+        }
+      } else {
+        // Fallback to random topic from list if API fails
+        const randomIndex = Math.floor(Math.random() * topics.length);
+        setRandomTopic(topics[randomIndex]);
+      }
+    } catch (error) {
+      console.error('Error generating topic:', error);
+      // Fallback to random topic from list if API fails
+      const randomIndex = Math.floor(Math.random() * topics.length);
+      setRandomTopic(topics[randomIndex]);
+    }
   };
 
   const startRecording = async () => {

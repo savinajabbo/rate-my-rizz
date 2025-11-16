@@ -14,7 +14,6 @@ export default function Home() {
   const [processingStep, setProcessingStep] = useState('');
   const [randomTopic, setRandomTopic] = useState('mysterious topics');
 
-  // Action Unit descriptions
   const auDescriptions: Record<string, string> = {
     'AU01': 'Inner Brow Raiser',
     'AU02': 'Outer Brow Raiser', 
@@ -33,7 +32,6 @@ export default function Home() {
     'AU45': 'Blink'
   };
 
-  // Metrics descriptions
   const metricsDescriptions: Record<string, string> = {
     'head_tilt': 'Head Tilt Angle',
     'eye_openness': 'Eye Openness',
@@ -100,10 +98,9 @@ export default function Home() {
     };
   }, [isRecording]);
 
-  // Generate random topic on component mount
+  // generate random topic on component mount
   useEffect(() => {
     generateNewTopic();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const topics = [
@@ -159,9 +156,33 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = () => {
-    const randomIndex = Math.floor(Math.random() * topics.length);
-    setRandomTopic(topics[randomIndex]);
+  const generateNewTopic = async () => {
+    try {
+      const response = await fetch('/api/random-topic', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.topic) {
+          setRandomTopic(data.topic.toLowerCase());
+        } else {
+          const randomIndex = Math.floor(Math.random() * topics.length);
+          setRandomTopic(topics[randomIndex]);
+        }
+      } else {
+        const randomIndex = Math.floor(Math.random() * topics.length);
+        setRandomTopic(topics[randomIndex]);
+      }
+    } catch (error) {
+      console.error('Error generating topic:', error);
+      const randomIndex = Math.floor(Math.random() * topics.length);
+      setRandomTopic(topics[randomIndex]);
+    }
   };
 
   const startRecording = async () => {
@@ -183,11 +204,11 @@ export default function Home() {
 
       const videoRecorder = new MediaRecorder(videoStream, {
         mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 250000, // Reduce bitrate to ~250kbps for smaller files
+        videoBitsPerSecond: 250000,
       });
       const audioRecorder = new MediaRecorder(audioStream, {
         mimeType: 'audio/webm',
-        audioBitsPerSecond: 32000, // Reduce audio bitrate to 32kbps
+        audioBitsPerSecond: 32000,
       });
 
       videoChunksRef.current = [];

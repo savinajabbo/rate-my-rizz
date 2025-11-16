@@ -87,14 +87,15 @@ export async function interpretExpression(
 export async function generateRandomDateTopic(): Promise<string> {
   console.log('generateRandomDateTopic called');
   const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. It should be:
-- Just 1-3 words (like "vintage motorcycles", "deep sea creatures", "conspiracy theories", "homemade pasta", "space exploration", "indoor plants", "true crime podcasts", etc.)
+- Just 1-4 words (like "vintage motorcycles", "deep sea creatures", "conspiracy theories", "homemade pasta", "space exploration", "indoor plants", "true crime podcasts", etc.)
 - Something that could lead to an interesting conversation
 - Can be quirky, nerdy, or completely random
+- Return it in ALL LOWERCASE letters
 - Don't include any explanation, just return the topic
 
-Examples: "pickle making", "quantum physics", "pet turtles", "vintage vinyl", "urban legends"
+Examples: "pickle making", "quantum physics", "pet turtles", "vintage vinyl", "urban legends", "alien abductions", "sourdough starters", "medieval history"
 
-Return only the topic, nothing else.`;
+Return only the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API...');
   const response = await getClient().chat.completions.create({
@@ -104,7 +105,7 @@ Return only the topic, nothing else.`;
     temperature: 1.2, // Higher temperature for more randomness
   });
 
-  const topic = response.choices[0].message.content?.trim() || 'mysterious topics';
+  const topic = response.choices[0].message.content?.trim().toLowerCase() || 'mysterious topics';
   console.log('OpenAI returned topic:', topic);
   return topic;
 }
