@@ -7,7 +7,6 @@ let recordingStartTime = null;
 const videoPreview = document.getElementById('videoPreview');
 const videoCanvas = document.getElementById('videoCanvas');
 const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
 const status = document.getElementById('status');
 const results = document.getElementById('results');
 const transcriptionDiv = document.getElementById('transcription');
@@ -21,11 +20,11 @@ async function initCamera() {
             audio: true
         });
         videoPreview.srcObject = videoStream;
-        status.textContent = 'Camera ready! Click "Start Recording" to begin.';
+        status.textContent = 'Camera ready! Click to begin your romantic letter 💌';
         status.className = 'status ready';
     } catch (error) {
         console.error('Error accessing camera/microphone:', error);
-        status.textContent = 'Error: Could not access camera/microphone. Please allow permissions.';
+        status.textContent = 'Oops! Can\'t access camera/microphone. Please allow permissions 😢';
         status.className = 'status error';
     }
 }
@@ -71,14 +70,27 @@ async function startRecording() {
         mediaRecorder = { video: videoRecorder, audio: audioRecorder };
         
         startBtn.disabled = true;
-        stopBtn.disabled = false;
-        status.textContent = 'Recording... Click "Stop Recording" when done.';
+        startBtn.textContent = '🎬 Recording... (10 seconds)';
+        status.textContent = 'Capturing your heartfelt words... 10 seconds remaining!';
         status.className = 'status recording';
         results.style.display = 'none';
         
+        // Auto-stop after 10 seconds
+        let timeLeft = 10;
+        const countdown = setInterval(() => {
+            timeLeft--;
+            startBtn.textContent = `🎬 Recording... (${timeLeft} seconds)`;
+            status.textContent = `Capturing your romantic essence... ${timeLeft} seconds remaining!`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                stopRecording();
+            }
+        }, 1000);
+        
     } catch (error) {
         console.error('Error starting recording:', error);
-        status.textContent = 'Error starting recording: ' + error.message;
+        status.textContent = 'Error starting recording: ' + error.message + ' 😢';
         status.className = 'status error';
     }
 }
@@ -87,8 +99,9 @@ async function startRecording() {
 async function stopRecording() {
     if (!mediaRecorder) return;
     
-    stopBtn.disabled = true;
-    status.textContent = 'Stopping recording...';
+    startBtn.textContent = '💌 Begin Your Love Letter';
+    startBtn.disabled = false;
+    status.textContent = 'Processing your romantic words...';
     status.className = 'status processing';
     
     // Stop both recorders
@@ -108,9 +121,10 @@ async function stopRecording() {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     if (videoChunks.length === 0 || audioChunks.length === 0) {
-        status.textContent = 'Error: No recording data captured. Please try again.';
+        status.textContent = 'Oops! No recording data captured. Try again babe! 😘';
         status.className = 'status error';
         startBtn.disabled = false;
+        startBtn.textContent = '💌 Begin Your Love Letter';
         return;
     }
     
@@ -155,13 +169,13 @@ async function sendToServer(videoBlob, audioBlob) {
         }
         
         results.style.display = 'block';
-        status.textContent = 'Analysis complete!';
+        status.textContent = 'Your romantic analysis is ready! 🌊✨';
         status.className = 'status complete';
         startBtn.disabled = false;
         
     } catch (error) {
         console.error('Error sending to server:', error);
-        status.textContent = 'Error processing: ' + error.message;
+        status.textContent = 'Error processing: ' + error.message + ' 😢';
         status.className = 'status error';
         startBtn.disabled = false;
     }
@@ -169,7 +183,6 @@ async function sendToServer(videoBlob, audioBlob) {
 
 // Event listeners
 startBtn.addEventListener('click', startRecording);
-stopBtn.addEventListener('click', stopRecording);
 
 // Initialize on page load
 initCamera();
