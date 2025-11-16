@@ -55,7 +55,7 @@ export async function interpretExpression(
     `;
 
   const response = await getClient().chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: "json_object" },
   });
@@ -93,7 +93,7 @@ Return only the topic, nothing else.`;
 
   console.log('Calling OpenAI API...');
   const response = await getClient().chat.completions.create({
-    model: 'gpt-4',
+    model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 10,
     temperature: 1.2, // Higher temperature for more randomness
