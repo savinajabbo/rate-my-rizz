@@ -17,7 +17,7 @@
     "@mediapipe/drawing_utils": "^0.3.1620248257",
     "openai": "^4.20.1",
     "@tensorflow/tfjs": "^4.15.0",
-    "@tensorflow-models/face-landmarks-detection": "^2.0.1"
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6"
   },
   "devDependencies": {
     "@types/node": "^20",
