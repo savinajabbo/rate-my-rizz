@@ -1,0 +1,17 @@
+import openai
+
+response = openai.ChatCompletion.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "system",
+            "content": "You roast people based on their flirting microexpressions."
+        },
+        {
+            "role": "user",
+            "content": f"Here are the metrics {metrics.json}. Roast them."
+        }
+    ]
+)
+
+roast = response["choices"][0]["message"]["content"]
