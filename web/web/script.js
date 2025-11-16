@@ -20,11 +20,11 @@ async function initCamera() {
             audio: true
         });
         videoPreview.srcObject = videoStream;
-        status.textContent = 'Camera ready! Click to begin your romantic letter 💌';
+        status.textContent = 'camera ready! click to begin your romantic letter';
         status.className = 'status ready';
     } catch (error) {
         console.error('Error accessing camera/microphone:', error);
-        status.textContent = 'Oops! Can\'t access camera/microphone. Please allow permissions 😢';
+        status.textContent = 'oops! can\'t access camera/microphone. please allow permissions';
         status.className = 'status error';
     }
 }
@@ -70,8 +70,8 @@ async function startRecording() {
         mediaRecorder = { video: videoRecorder, audio: audioRecorder };
         
         startBtn.disabled = true;
-        startBtn.textContent = '🎬 Recording... (10 seconds)';
-        status.textContent = 'Capturing your heartfelt words... 10 seconds remaining!';
+        startBtn.textContent = 'recording... (10 seconds)';
+        status.textContent = 'capturing your heartfelt words... 10 seconds remaining!';
         status.className = 'status recording';
         results.style.display = 'none';
         
@@ -79,8 +79,8 @@ async function startRecording() {
         let timeLeft = 10;
         const countdown = setInterval(() => {
             timeLeft--;
-            startBtn.textContent = `🎬 Recording... (${timeLeft} seconds)`;
-            status.textContent = `Capturing your romantic essence... ${timeLeft} seconds remaining!`;
+            startBtn.textContent = `recording... (${timeLeft} seconds)`;
+            status.textContent = `capturing your romantic essence... ${timeLeft} seconds remaining!`;
             
             if (timeLeft <= 0) {
                 clearInterval(countdown);
@@ -90,7 +90,7 @@ async function startRecording() {
         
     } catch (error) {
         console.error('Error starting recording:', error);
-        status.textContent = 'Error starting recording: ' + error.message + ' 😢';
+        status.textContent = 'error starting recording: ' + error.message;
         status.className = 'status error';
     }
 }
@@ -99,9 +99,9 @@ async function startRecording() {
 async function stopRecording() {
     if (!mediaRecorder) return;
     
-    startBtn.textContent = '💌 Begin Your Love Letter';
+    startBtn.textContent = 'begin your love letter';
     startBtn.disabled = false;
-    status.textContent = 'Processing your romantic words...';
+    status.textContent = 'processing your romantic words...';
     status.className = 'status processing';
     
     // Stop both recorders
@@ -121,10 +121,10 @@ async function stopRecording() {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     if (videoChunks.length === 0 || audioChunks.length === 0) {
-        status.textContent = 'Oops! No recording data captured. Try again babe! 😘';
+        status.textContent = 'oops! no recording data captured. try again babe!';
         status.className = 'status error';
         startBtn.disabled = false;
-        startBtn.textContent = '💌 Begin Your Love Letter';
+        startBtn.textContent = 'begin your love letter';
         return;
     }
     
@@ -169,13 +169,13 @@ async function sendToServer(videoBlob, audioBlob) {
         }
         
         results.style.display = 'block';
-        status.textContent = 'Your romantic analysis is ready! 🌊✨';
+        status.textContent = 'your romantic analysis is ready!';
         status.className = 'status complete';
         startBtn.disabled = false;
         
     } catch (error) {
         console.error('Error sending to server:', error);
-        status.textContent = 'Error processing: ' + error.message + ' 😢';
+        status.textContent = 'error processing: ' + error.message;
         status.className = 'status error';
         startBtn.disabled = false;
     }
