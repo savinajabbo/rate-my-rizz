@@ -2,7 +2,11 @@ from openai import OpenAI
 import json
 import os
 
-api_key = os.environ.get("OPENAI_API_KEY", "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")
+# Get API key from environment variable
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY environment variable is not set. Please set it before running the application.")
+
 client = OpenAI(api_key=api_key)
 
 def interpret_expression(aus, metrics):

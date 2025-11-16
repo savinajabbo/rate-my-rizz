@@ -10,6 +10,14 @@ import tempfile
 import sys
 from pathlib import Path
 
+# Load environment variables from .env file if it exists (for local development)
+try:
+    from dotenv import load_dotenv
+    project_root = Path(__file__).parent.parent.parent
+    load_dotenv(project_root / '.env')
+except ImportError:
+    pass  # python-dotenv not installed, that's okay
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from au_feature import compute_aus
 from metrics import compute_metrics
