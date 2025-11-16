@@ -161,37 +161,9 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = async () => {
-    try {
-      const response = await fetch('/api/random-topic', {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.topic) {
-          // Ensure the topic is lowercase
-          setRandomTopic(data.topic.toLowerCase());
-        } else {
-          // Fallback to random topic from list if API fails
-          const randomIndex = Math.floor(Math.random() * topics.length);
-          setRandomTopic(topics[randomIndex]);
-        }
-      } else {
-        // Fallback to random topic from list if API fails
-        const randomIndex = Math.floor(Math.random() * topics.length);
-        setRandomTopic(topics[randomIndex]);
-      }
-    } catch (error) {
-      console.error('Error generating topic:', error);
-      // Fallback to random topic from list if API fails
-      const randomIndex = Math.floor(Math.random() * topics.length);
-      setRandomTopic(topics[randomIndex]);
-    }
+  const generateNewTopic = () => {
+    const randomIndex = Math.floor(Math.random() * topics.length);
+    setRandomTopic(topics[randomIndex]);
   };
 
   const startRecording = async () => {
@@ -465,7 +437,7 @@ export default function Home() {
           muted
           playsInline
           className="w-full max-w-2xl mx-auto rounded-xl border-4 border-amber-300/60 mb-8 shadow-lg"
-          style={{boxShadow: '0 10px 25px rgba(139,69,19,0.2)'}}
+          style={{boxShadow: '0 10px 25px rgba(139,69,19,0.2)', transform: 'scaleX(-1)'}}
         />
         <canvas ref={canvasRef} className="hidden" />
 
