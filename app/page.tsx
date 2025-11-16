@@ -266,8 +266,13 @@ export default function Home() {
       const data = await response.json();
       console.log('Success response:', data);
       setResults(data);
-      setStatus('Analysis complete!');
+      setStatus('Analysis complete! 🎉');
       setProcessingStep('');
+      
+      // Force UI update
+      setTimeout(() => {
+        setStatus('Ready for another rizz check!');
+      }, 2000);
     } catch (error: any) {
       console.error('Processing error:', error);
       
@@ -299,16 +304,26 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col items-center justify-center p-8">
-      <h1 className="text-5xl font-bold text-white mb-8 drop-shadow-lg">Rate My Rizz</h1>
+    <main className="min-h-screen bg-gradient-to-br from-pink-400 via-coral-400 to-orange-500 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      {/* Tropical background elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-pink-300/20 via-coral-300/20 to-orange-400/20"></div>
+      <div className="absolute top-10 left-10 w-32 h-32 bg-pink-300/30 rounded-full blur-xl"></div>
+      <div className="absolute top-32 right-20 w-24 h-24 bg-orange-300/40 rounded-full blur-lg"></div>
+      <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-coral-300/25 rounded-full blur-2xl"></div>
+      <h1 className="text-6xl font-bold text-white mb-8 drop-shadow-2xl relative z-10 font-serif tracking-wide">
+        💕 Rate My Rizz 💕
+      </h1>
+      <p className="text-xl text-white/90 mb-6 text-center max-w-2xl relative z-10 font-light">
+        Welcome to the villa! Let's see if you've got that Love Island charm ✨
+      </p>
 
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-4xl w-full shadow-2xl">
+      <div className="bg-white/15 backdrop-blur-xl rounded-3xl p-8 max-w-4xl w-full shadow-2xl border border-white/20 relative z-10">
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
-          className="w-full max-w-2xl mx-auto rounded-lg border-4 border-white/20 mb-6"
+          className="w-full max-w-2xl mx-auto rounded-2xl border-4 border-gradient-to-r from-pink-300 to-orange-300 mb-6 shadow-xl"
         />
         <canvas ref={canvasRef} className="hidden" />
 
@@ -316,32 +331,25 @@ export default function Home() {
           <button
             onClick={startRecording}
             disabled={isRecording}
-            className="px-8 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white font-bold rounded-lg transition-all disabled:cursor-not-allowed"
+            className="px-12 py-4 bg-gradient-to-r from-pink-500 via-coral-500 to-orange-500 hover:from-pink-600 hover:via-coral-600 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg transform hover:scale-105 text-xl"
           >
-            Start Recording
-          </button>
-          <button
-            onClick={stopRecording}
-            disabled={!isRecording}
-            className="px-8 py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-500 text-white font-bold rounded-lg transition-all disabled:cursor-not-allowed"
-          >
-            Stop Recording
+            {isRecording ? '🔴 Recording...' : '💕 Start Your Rizz Check'}
           </button>
         </div>
 
         <div className="text-center text-white mb-6">
-          <p className="text-lg">{status}</p>
+          <p className="text-lg font-medium">{status}</p>
           {isRecording && (
-            <div className="mt-2">
-              <div className="text-2xl font-bold text-red-400">{timeLeft}</div>
-              <div className="text-sm text-white/70">seconds remaining</div>
+            <div className="mt-4">
+              <div className="text-4xl font-bold text-white animate-pulse">{timeLeft}</div>
+              <div className="text-lg text-white/90 font-light">seconds of pure rizz left 🔥</div>
             </div>
           )}
-          {processingStep && (
-            <div className="mt-2">
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <div className="text-sm text-white/80">{processingStep}</div>
+          {processingStep && !results && (
+            <div className="mt-4">
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <div className="text-lg text-white/90 font-light">{processingStep}</div>
               </div>
             </div>
           )}
@@ -386,18 +394,22 @@ export default function Home() {
         )}
 
         {results && (
-          <div className="bg-white/20 backdrop-blur-md rounded-lg p-6 mt-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Your Rizz Analysis</h2>
+          <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 mt-6 border border-white/30">
+            <h2 className="text-3xl font-bold text-white mb-6 text-center font-serif">💕 Your Rizz Analysis 💕</h2>
             {results.transcription && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold text-white mb-2">What you said:</h3>
-                <p className="text-white/90">{results.transcription}</p>
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+                  🗣️ What you said:
+                </h3>
+                <p className="text-white/90 text-lg leading-relaxed bg-black/20 p-4 rounded-xl">{results.transcription}</p>
               </div>
             )}
             {results.analysis && (
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold text-white mb-2">Rizz Analysis:</h3>
-                <pre className="bg-black/30 text-white p-4 rounded-lg whitespace-pre-wrap">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+                  🔥 Rizz Analysis:
+                </h3>
+                <pre className="bg-black/30 text-white p-6 rounded-xl whitespace-pre-wrap text-base leading-relaxed border border-white/20">
                   {results.analysis}
                 </pre>
               </div>
