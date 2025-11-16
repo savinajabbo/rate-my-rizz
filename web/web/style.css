@@ -15,13 +15,14 @@ h1 {
     width: 200px;
     height: 20px;
     left: 30px;
-    margin-top: 340px;
+    margin-top: 500px;
     margin-right: 500px;
 
 }
-.button {
-    bottom:50px;
-    left: 30px;
-    margin-top: 100px;
+#rizzButton {
+    bottom: 5px;
+    right: 30px;
+    margin-top: 40px;
+
 
 }

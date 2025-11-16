@@ -9,10 +9,10 @@
     </head>
     <body>
         <center><h1>Rate My Rizz</h1></center>
-      
+      <img src="{{ url_for('video') }}" width="640" height="480" id="rizzCam" alt="Webcam feed not available"/>
         <form id="rizzForm">
             <textarea id="rizzInput" placeholder="Enter your name here..."></textarea>
-            <button type="submit">Rate</button>
+            <button  id="rizzButton"type="submit">Rate</button>
         </form>
         <div id="rizzResult"></div>
     </body>
