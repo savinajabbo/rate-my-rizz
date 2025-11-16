@@ -9,7 +9,7 @@ response = openai.ChatCompletion.create(
         },
         {
             "role": "user",
-            "content": f"Here are the metrics {metrics.json}. Roast them."
+            "content": "Here are the metrics {metrics.json}. Roast them."
         }
     ]
 )
