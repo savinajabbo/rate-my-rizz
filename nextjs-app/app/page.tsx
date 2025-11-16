@@ -8,7 +8,7 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('camera ready! click "begin your love letter" to start your 30-second rizz check.');
+  const [status, setStatus] = useState('click "begin your love letter" to start your 30-second rizz check.');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
@@ -74,6 +74,7 @@ export default function Home() {
   // Generate random topic on component mount
   useEffect(() => {
     generateNewTopic();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fallbackTopics = [
@@ -153,7 +154,7 @@ export default function Home() {
       mediaRecorderRef.current = { video: videoRecorder, audio: audioRecorder };
       setIsRecording(true);
       setTimeLeft(30);
-      setStatus('recording... 30 seconds remaining');
+      setStatus('recording...');
       setResults(null);
 
       recordingTimerRef.current = setInterval(() => {
@@ -162,7 +163,7 @@ export default function Home() {
             stopRecording();
             return 0;
           }
-          setStatus(`recording... ${prev - 1} seconds remaining`);
+          setStatus('recording...');
           return prev - 1;
         });
       }, 1000);
@@ -357,8 +358,9 @@ export default function Home() {
         <button 
           onClick={generateNewTopic}
           disabled={loadingTopic}
-          className="text-sm opacity-70 hover:opacity-100 transition-opacity underline"
+          className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer disabled:cursor-wait"
           style={{color: '#AE2D80'}}
+          type="button"
         >
           {loadingTopic ? 'generating...' : 'get new topic'}
         </button>
