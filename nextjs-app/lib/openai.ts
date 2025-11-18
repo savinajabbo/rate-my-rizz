@@ -25,7 +25,14 @@ export async function interpretExpression(
     Action Units (AUs): ${JSON.stringify(aus, null, 2)}
     Psychological Metrics: ${JSON.stringify(metrics, null, 2)}
     
-    Analyze this person's "rizz" (charisma, charm, flirting ability) and provide:
+    Analyze this person's "rizz" (charisma, charm, flirting ability) by CAREFULLY examining the metrics:
+    - High AU12 (smile) + AU06 (cheek raise) = genuine warmth (GOOD)
+    - High tension_index = nervous/stiff (BAD)
+    - High confidence_index = natural ease (GOOD)
+    - Low eye_openness = disengaged (BAD)
+    - Good smile_symmetry = authentic expression (GOOD)
+    
+    Now provide:
     
     1. A RIZZ SCORE from 0-100 based on:
        - Confidence and authenticity (0-30 points)
@@ -33,14 +40,16 @@ export async function interpretExpression(
        - Emotional engagement and presence (0-25 points)
        - Natural charm and ease (0-20 points)
        
-       IMPORTANT SCORING GUIDELINES:
-       - 0-40: Absolutely zero rizz, negative aura, touch grass energy (RARE - only for truly terrible attempts)
-       - 41-60: Below average, needs work, awkward vibes (uncommon)
-       - 61-75: Decent rizz, has solid potential, respectable effort
-       - 76-85: Strong rizz, confident, charismatic, above average
-       - 86-95: ELITE TIER, certified rizzler, unmatched aura
-       - 96-100: LEGENDARY STATUS, once-in-a-lifetime rizz god (reserve for truly exceptional)
-       - DEFAULT MINDSET: Start at 70 and adjust up or down based on performance. Be encouraging!
+       CRITICAL SCORING GUIDELINES - USE THE FULL RANGE:
+       - 0-20: ZERO RIZZ. Negative aura, cringe energy, absolutely no game whatsoever
+       - 21-40: Very weak rizz, awkward, uncomfortable to watch, needs serious help
+       - 41-55: Below average, trying but failing, some potential but rough execution
+       - 56-70: Average rizz, decent effort, nothing special but not terrible either
+       - 71-80: Good rizz, confident, engaging, above average performance
+       - 81-90: Excellent rizz, charismatic, natural charm, impressive skills
+       - 91-100: ELITE/LEGENDARY, once-in-a-lifetime, absolute rizz god status
+       
+       IMPORTANT: Analyze the actual data critically. Low confidence/tension = lower scores. High engagement/warmth = higher scores. DON'T default to 70-80 for everyone. Be HONEST and VARIED in your scoring!
     
     2. A RIZZ TYPE - one creative, funny description (2-4 words) like:
        - "golden retriever energy"
