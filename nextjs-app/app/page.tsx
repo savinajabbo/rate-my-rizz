@@ -156,9 +156,34 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = () => {
-    const randomIndex = Math.floor(Math.random() * topics.length);
-    setRandomTopic(topics[randomIndex]);
+  const generateNewTopic = async () => {
+    console.log('🎯 generateNewTopic button clicked!');
+    try {
+      console.log('📡 Calling /api/random-topic...');
+      const response = await fetch('/api/random-topic');
+      const data = await response.json();
+      
+      console.log('📥 API Response:', data);
+      
+      if (data.success && data.topic) {
+        console.log('✅ Setting new topic:', data.topic);
+        setRandomTopic(data.topic);
+      } else {
+        console.error('❌ API call failed:', data);
+        // Fallback to hardcoded topics if API fails
+        const randomIndex = Math.floor(Math.random() * topics.length);
+        const fallbackTopic = topics[randomIndex];
+        console.log('🔄 Using fallback topic:', fallbackTopic);
+        setRandomTopic(fallbackTopic);
+      }
+    } catch (error) {
+      console.error('💥 Error calling random topic API:', error);
+      // Fallback to hardcoded topics if API fails
+      const randomIndex = Math.floor(Math.random() * topics.length);
+      const fallbackTopic = topics[randomIndex];
+      console.log('🔄 Using fallback topic due to error:', fallbackTopic);
+      setRandomTopic(fallbackTopic);
+    }
   };
 
   const startRecording = async () => {

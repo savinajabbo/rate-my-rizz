@@ -98,29 +98,99 @@ export async function interpretExpression(
   }
 }
 
+const FALLBACK_TOPICS = [
+  'vintage motorcycles', 'deep sea creatures', 'conspiracy theories', 'homemade pasta',
+  'space exploration', 'indoor plants', 'true crime podcasts', 'pickle making',
+  'quantum physics', 'pet turtles', 'vintage vinyl', 'urban legends',
+  'alien abductions', 'sourdough starters', 'medieval history', 'lucid dreaming',
+  'mushroom foraging', 'time travel paradoxes', 'ancient civilizations', 'ghost stories',
+  'fermented foods', 'street art', 'board game design', 'ocean mysteries',
+  'parallel universes', 'coffee roasting', 'forgotten languages', 'cryptozoology',
+  'minimalist living', 'bee keeping', 'aurora borealis', 'vintage cameras',
+  'desert survival', 'memory palaces', 'origami art', 'arctic exploration'
+];
+
+let topicCache: { topic: string; timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000;
+
+function getRandomFallbackTopic(): string {
+  const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
+  return FALLBACK_TOPICS[randomIndex];
+}
+
+function isValidTopic(topic: string): boolean {
+  const words = topic.trim().split(/\s+/);
+  return (
+    words.length >= 1 && 
+    words.length <= 4 && 
+    topic.length > 3 && 
+    topic.length < 50 &&
+    /^[a-z\s-']+$/.test(topic)
+  );
+}
+
 export async function generateRandomDateTopic(): Promise<string> {
-  console.log('generateRandomDateTopic called');
-  const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. It should be:
-- Just 1-4 words (like "vintage motorcycles", "deep sea creatures", "conspiracy theories", "homemade pasta", "space exploration", "indoor plants", "true crime podcasts", etc.)
-- Something that could lead to an interesting conversation
-- Can be quirky, nerdy, or completely random
-- Return it in ALL LOWERCASE letters
-- Don't include any explanation, just return the topic
+  console.log('🤖 generateRandomDateTopic called');
+  
+  if (topicCache && (Date.now() - topicCache.timestamp) < CACHE_DURATION) {
+    console.log('⚡ Returning cached topic:', topicCache.topic);
+    return topicCache.topic;
+  }
 
-Examples: "pickle making", "quantum physics", "pet turtles", "vintage vinyl", "urban legends", "alien abductions", "sourdough starters", "medieval history"
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.error('No OPENAI_API_KEY found in environment variables');
+    throw new Error('OPENAI_API_KEY environment variable is required for topic generation');
+  }
+  
+  console.log('OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
+  console.log('Cache expired or empty, generating new topic with OpenAI...');
 
-Return only the lowercase topic, nothing else.`;
+  const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. Requirements:
 
-  console.log('Calling OpenAI API...');
+STRICT FORMAT:
+- Exactly 1-4 words only
+- ALL LOWERCASE letters
+- No punctuation except hyphens or apostrophes
+- No explanations or extra text
+
+TOPIC CATEGORIES (pick randomly):
+- Hobbies & Crafts: 
+- Science & Nature: 
+- Food & Culture
+- Arts & Entertainment
+- Mystery & Unusual
+- Technology & Future
+- History & Ancient
+- Psychology & Philosophy
+
+EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory palaces", "bee keeping", "origami art", "desert survival", "coffee roasting"
+
+Return ONLY the lowercase topic, nothing else.`;
+
+  console.log('Calling OpenAI API for topic generation...');
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
-    max_tokens: 10,
-    temperature: 1.2,
+    max_tokens: 15,
+    temperature: 1.3,
+    presence_penalty: 0.6,
   });
 
-  const topic = response.choices[0].message.content?.trim().toLowerCase() || 'mysterious topics';
-  console.log('OpenAI returned topic:', topic);
+  const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
+  console.log('OpenAI raw response:', rawTopic);
+  console.log('API call completed successfully!');
+
+  let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
+  
+  if (!isValidTopic(topic)) {
+    console.warn('Generated topic failed validation:', topic, 'Retrying...');
+    throw new Error(`Generated topic "${topic}" failed validation criteria`);
+  }
+
+  topicCache = { topic, timestamp: Date.now() };
+  
+  console.log('Final topic:', topic);
   return topic;
 }
 
