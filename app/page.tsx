@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import { computeAUs } from '@/lib/auFeature';
@@ -8,13 +8,12 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('are you ready to rizz?');
+  const [status, setStatus] = useState('click "am i the rizzler?" to start your 30-second rizz check.');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
   const [randomTopic, setRandomTopic] = useState('mysterious topics');
 
-  // Action Unit descriptions
   const auDescriptions: Record<string, string> = {
     'AU01': 'Inner Brow Raiser',
     'AU02': 'Outer Brow Raiser', 
@@ -33,7 +32,6 @@ export default function Home() {
     'AU45': 'Blink'
   };
 
-  // Metrics descriptions
   const metricsDescriptions: Record<string, string> = {
     'head_tilt': 'Head Tilt Angle',
     'eye_openness': 'Eye Openness',
@@ -55,7 +53,6 @@ export default function Home() {
   const metricsDataRef = useRef<Record<string, number>[]>([]);
 
   useEffect(() => {
-    // Initialize MediaPipe Face Mesh
     const faceMesh = new FaceMesh({
       locateFile: (file) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -84,7 +81,6 @@ export default function Home() {
 
     faceMeshRef.current = faceMesh;
 
-    // Initialize camera
     if (videoRef.current) {
       const camera = new Camera(videoRef.current, {
         onFrame: async () => {
@@ -101,12 +97,6 @@ export default function Home() {
       cameraRef.current?.stop();
     };
   }, [isRecording]);
-
-  // Generate random topic on component mount
-  useEffect(() => {
-    generateNewTopic();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const topics = [
     'the ethics of time-travel tourism',
@@ -145,7 +135,6 @@ export default function Home() {
     'whether robots can be morally responsible',
     'the history of the calendar',
     'why we find certain sounds satisfying (asmr)',
-    'how rockets land themselves (spacex!)',
     'genetic engineering ethics',
     'the allure of dystopian fiction',
     'why cities develop unique "vibes"',
@@ -161,10 +150,40 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = () => {
-    const randomIndex = Math.floor(Math.random() * topics.length);
-    setRandomTopic(topics[randomIndex]);
-  };
+  const generateNewTopic = useCallback(async () => {
+    console.log('generateNewTopic called!');
+    try {
+      console.log('Calling /api/random-topic...');
+      const response = await fetch('/api/random-topic');
+      const data = await response.json();
+      
+      console.log('API Response:', data);
+      
+      if (data.success && data.topic) {
+        console.log('Setting new topic:', data.topic);
+        setRandomTopic(data.topic);
+      } else {
+        console.error('API call failed:', data);
+        const randomIndex = Math.floor(Math.random() * topics.length);
+        const fallbackTopic = topics[randomIndex];
+        console.log('Using fallback topic:', fallbackTopic);
+        setRandomTopic(fallbackTopic);
+      }
+    } catch (error) {
+      console.error('Error calling random topic API:', error);
+      // fallback to hardcoded topics if API fails
+      const randomIndex = Math.floor(Math.random() * topics.length);
+      const fallbackTopic = topics[randomIndex];
+      console.log('Using fallback topic due to error:', fallbackTopic);
+      setRandomTopic(fallbackTopic);
+    }
+  }, [topics]);
+
+  // generate random topic on component mount
+  useEffect(() => {
+    console.log('useEffect running - about to call generateNewTopic');
+    generateNewTopic();
+  }, []);
 
   const startRecording = async () => {
     try {
@@ -185,11 +204,11 @@ export default function Home() {
 
       const videoRecorder = new MediaRecorder(videoStream, {
         mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 250000, // Reduce bitrate to ~250kbps for smaller files
+        videoBitsPerSecond: 250000,
       });
       const audioRecorder = new MediaRecorder(audioStream, {
         mimeType: 'audio/webm',
-        audioBitsPerSecond: 32000, // Reduce audio bitrate to 32kbps
+        audioBitsPerSecond: 32000,
       });
 
       videoChunksRef.current = [];
@@ -214,7 +233,6 @@ export default function Home() {
       setStatus('recording...');
       setResults(null);
 
-      // Start 10-second countdown
       recordingTimerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -226,22 +244,21 @@ export default function Home() {
         });
       }, 1000);
     } catch (error: any) {
-      setStatus('error: ' + error.message.toLowerCase());
+      setStatus('Error: ' + error.message);
     }
   };
 
   const stopRecording = async () => {
     if (!mediaRecorderRef.current) return;
 
-    // Clear the timer
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
 
     setIsRecording(false);
-    setStatus('processing your rizz...');
-    setProcessingStep('preparing files...');
+    setStatus('Processing your rizz...');
+    setProcessingStep('Preparing files...');
 
     const videoStopped = new Promise<void>((resolve) => {
       mediaRecorderRef.current!.video.onstop = () => resolve();
@@ -257,7 +274,7 @@ export default function Home() {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (videoChunksRef.current.length === 0 || audioChunksRef.current.length === 0) {
-        setStatus('error: no recording data captured.');
+      setStatus('Error: No recording data captured.');
       return;
     }
 
@@ -267,7 +284,6 @@ export default function Home() {
     console.log('Original video size:', videoBlob.size, 'bytes');
     console.log('Original audio size:', audioBlob.size, 'bytes');
 
-    // Calculate average AUs and metrics
     const avgAUs: Record<string, number> = {};
     const avgMetrics: Record<string, number> = {};
 
@@ -289,7 +305,6 @@ export default function Home() {
       });
     }
 
-    // Send to server - Create fresh blobs to avoid "body disturbed" error
     const freshVideoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
     const freshAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
     
@@ -300,9 +315,9 @@ export default function Home() {
     formData.append('metrics', JSON.stringify(avgMetrics));
 
     try {
-      setProcessingStep('sending to server...');
-      console.log('Sending request to /api/process...');
-      console.log('Form data contents:', {
+      setProcessingStep('Sending to server...');
+      console.log('sending request to /api/process...');
+      console.log('form data contents:', {
         video: freshVideoBlob.size + ' bytes',
         audio: freshAudioBlob.size + ' bytes',
         aus: Object.keys(avgAUs).length + ' action units',
@@ -311,16 +326,14 @@ export default function Home() {
         audioChunks: audioChunksRef.current.length
       });
 
-      // Add timeout to prevent hanging
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        setProcessingStep('request timed out...');
+        setProcessingStep('Request timed out...');
         controller.abort();
-      }, 60000); // 60 second timeout
+      }, 60000);
 
-      setProcessingStep('analyzing audio and facial expressions...');
+      setProcessingStep('Analyzing audio and facial expressions...');
       
-      // Try the main endpoint first, fallback to skip-audio if it fails
       let response;
       try {
         response = await fetch('/api/process', {
@@ -329,10 +342,9 @@ export default function Home() {
           signal: controller.signal,
         });
       } catch (mainError) {
-        console.warn('Main API failed, trying skip-audio fallback:', mainError);
-        setProcessingStep('retrying without audio transcription...');
+        console.warn('main api failed, trying skip-audio fallback:', mainError);
+        setProcessingStep('Retrying without audio transcription...');
         
-        // Create a simpler FormData with just AUs and metrics
         const fallbackFormData = new FormData();
         fallbackFormData.append('aus', JSON.stringify(avgAUs));
         fallbackFormData.append('metrics', JSON.stringify(avgMetrics));
@@ -345,9 +357,9 @@ export default function Home() {
       }
 
       clearTimeout(timeoutId);
-      setProcessingStep('processing response...');
+      setProcessingStep('Processing response...');
 
-      console.log('Response status:', response.status, response.statusText);
+      console.log('response status:', response.status, response.statusText);
 
       if (!response.ok) {
         let errorData;
@@ -367,17 +379,16 @@ export default function Home() {
       }
 
       const data = await response.json();
-      console.log('Success response:', data);
+      console.log('success response:', data);
       setResults(data);
-      setStatus('analysis complete!');
+      setStatus('Analysis complete!');
       setProcessingStep('');
       
-      // Force UI update
       setTimeout(() => {
-        setStatus('ready for another rizz check!');
+        setStatus('Ready for another rizz check!');
       }, 2000);
     } catch (error: any) {
-      console.error('Processing error:', error);
+      console.error('processing error:', error);
       
       let errorMessage = error.message;
       if (error.name === 'AbortError') {
@@ -386,10 +397,9 @@ export default function Home() {
         errorMessage = 'Network error: Unable to connect to server.';
       }
       
-      setStatus('error: ' + errorMessage.toLowerCase());
+      setStatus('Error: ' + errorMessage);
       setProcessingStep('');
       
-      // Also show debug info in the UI
       setResults({
         error: errorMessage,
         debug: {
@@ -421,7 +431,10 @@ export default function Home() {
           your date is talking about <span className="underline decoration-wavy">{randomTopic}</span>
         </p>
         <button 
-          onClick={generateNewTopic}
+          onClick={() => {
+            console.log('BUTTON CLICKED!!!');
+            generateNewTopic();
+          }}
           className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer"
           style={{color: '#AE2D80'}}
           type="button"
@@ -447,7 +460,7 @@ export default function Home() {
             disabled={isRecording}
             className="px-12 py-4 gold-button text-white font-bold rounded-full transition-all disabled:cursor-not-allowed shadow-lg text-xl border-2"
           >
-            {isRecording ? 'recording...' : 'am i the rizzler?'}
+            {isRecording ? 'recording...' : 'am i a rizzler?'}
           </button>
         </div>
 
@@ -462,14 +475,13 @@ export default function Home() {
           {processingStep && !results && (
             <div className="mt-4">
               <div className="flex items-center justify-center gap-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-700"></div>
                 <div className="text-lg font-bold italic" style={{color: '#AE2D80'}}>{processingStep.toLowerCase()}</div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Debug: Show Action Units and Metrics */}
         {(ausDataRef.current.length > 0 || metricsDataRef.current.length > 0) && (
           <div className="bg-blue-500/20 backdrop-blur-md rounded-lg p-4 mt-4">
             <h3 className="text-lg font-bold mb-2" style={{color: '#AE2D80'}}>debug info</h3>
@@ -546,7 +558,6 @@ export default function Home() {
                 </p>
               </div>
             )}
-            {/* Debug: Show raw server response */}
             <details className="mt-4">
               <summary className="cursor-pointer text-sm font-bold" style={{color: '#AE2D80'}}>debug: raw server response</summary>
               <pre className="bg-black/50 p-2 rounded mt-2 text-xs overflow-auto max-h-40 font-bold" style={{color: '#AE2D80'}}>

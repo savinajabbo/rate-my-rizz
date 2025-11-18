@@ -2,33 +2,66 @@ import { NextResponse } from 'next/server';
 import { generateRandomDateTopic } from '@/lib/openai';
 
 export async function GET() {
-  console.log('Random topic API called');
+  const startTime = Date.now();
+  console.log('Random topic API called at:', new Date().toISOString());
+  
   try {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('No OpenAI API key found');
+      console.error('OpenAI API key not configured');
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { 
+          error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.',
+          success: false,
+          setup_instructions: 'Create a .env.local file with OPENAI_API_KEY=your_api_key_here'
+        },
         { status: 500 }
       );
     }
 
-    console.log('Calling OpenAI to generate topic...');
+    console.log('Generating random date topic with OpenAI...');
     const topic = await generateRandomDateTopic();
-    console.log('Generated topic:', topic);
+    const processingTime = Date.now() - startTime;
     
-    // Return with no-cache headers to prevent caching
-    return NextResponse.json({ topic }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
-    });
-  } catch (error: any) {
-    console.error('Error generating random topic:', error);
+    console.log(`Successfully generated topic: "${topic}" (${processingTime}ms)`);
+    
     return NextResponse.json(
-      { error: 'Failed to generate topic', topic: 'mysterious subjects' },
+      { 
+        topic,
+        success: true,
+        processingTime,
+        timestamp: new Date().toISOString(),
+        source: 'openai'
+      }, 
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Processing-Time': `${processingTime}ms`
+        }
+      }
+    );
+    
+  } catch (error: any) {
+    const processingTime = Date.now() - startTime;
+    console.error('Error generating random topic:', {
+      error: error.message,
+      stack: error.stack,
+      processingTime
+    });
+    
+    // Return detailed error information
+    return NextResponse.json(
+      { 
+        error: 'Failed to generate topic with OpenAI API',
+        details: error.message,
+        success: false,
+        processingTime,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
 }
+
