@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import { computeAUs } from '@/lib/auFeature';
@@ -8,7 +8,7 @@ import { computeMetrics } from '@/lib/metrics';
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('click "begin your love letter" to start your 30-second rizz check.');
+  const [status, setStatus] = useState('click "am i the rizzler?" to start your 30-second rizz check.');
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
@@ -98,11 +98,6 @@ export default function Home() {
     };
   }, [isRecording]);
 
-  // generate random topic on component mount
-  useEffect(() => {
-    generateNewTopic();
-  }, []);
-
   const topics = [
     'the ethics of time-travel tourism',
     'why humans love spicy food',
@@ -140,7 +135,6 @@ export default function Home() {
     'whether robots can be morally responsible',
     'the history of the calendar',
     'why we find certain sounds satisfying (asmr)',
-    'how rockets land themselves (spacex!)',
     'genetic engineering ethics',
     'the allure of dystopian fiction',
     'why cities develop unique "vibes"',
@@ -156,35 +150,40 @@ export default function Home() {
     'the psychology of collecting things'
   ];
 
-  const generateNewTopic = async () => {
-    console.log('🎯 generateNewTopic button clicked!');
+  const generateNewTopic = useCallback(async () => {
+    console.log('generateNewTopic called!');
     try {
-      console.log('📡 Calling /api/random-topic...');
+      console.log('Calling /api/random-topic...');
       const response = await fetch('/api/random-topic');
       const data = await response.json();
       
-      console.log('📥 API Response:', data);
+      console.log('API Response:', data);
       
       if (data.success && data.topic) {
-        console.log('✅ Setting new topic:', data.topic);
+        console.log('Setting new topic:', data.topic);
         setRandomTopic(data.topic);
       } else {
-        console.error('❌ API call failed:', data);
-        // Fallback to hardcoded topics if API fails
+        console.error('API call failed:', data);
         const randomIndex = Math.floor(Math.random() * topics.length);
         const fallbackTopic = topics[randomIndex];
-        console.log('🔄 Using fallback topic:', fallbackTopic);
+        console.log('Using fallback topic:', fallbackTopic);
         setRandomTopic(fallbackTopic);
       }
     } catch (error) {
-      console.error('💥 Error calling random topic API:', error);
-      // Fallback to hardcoded topics if API fails
+      console.error('Error calling random topic API:', error);
+      // fallback to hardcoded topics if API fails
       const randomIndex = Math.floor(Math.random() * topics.length);
       const fallbackTopic = topics[randomIndex];
-      console.log('🔄 Using fallback topic due to error:', fallbackTopic);
+      console.log('Using fallback topic due to error:', fallbackTopic);
       setRandomTopic(fallbackTopic);
     }
-  };
+  }, [topics]);
+
+  // generate random topic on component mount
+  useEffect(() => {
+    console.log('useEffect running - about to call generateNewTopic');
+    generateNewTopic();
+  }, []);
 
   const startRecording = async () => {
     try {
@@ -432,7 +431,10 @@ export default function Home() {
           your date is talking about <span className="underline decoration-wavy">{randomTopic}</span>
         </p>
         <button 
-          onClick={generateNewTopic}
+          onClick={() => {
+            console.log('BUTTON CLICKED!!!');
+            generateNewTopic();
+          }}
           className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer"
           style={{color: '#AE2D80'}}
           type="button"

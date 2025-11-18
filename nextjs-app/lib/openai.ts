@@ -111,7 +111,7 @@ const FALLBACK_TOPICS = [
 ];
 
 let topicCache: { topic: string; timestamp: number } | null = null;
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 0; // Disabled for testing - set to 5 * 60 * 1000 for production
 
 function getRandomFallbackTopic(): string {
   const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
@@ -130,7 +130,7 @@ function isValidTopic(topic: string): boolean {
 }
 
 export async function generateRandomDateTopic(): Promise<string> {
-  console.log('🤖 generateRandomDateTopic called');
+  console.log('generateRandomDateTopic called');
   
   if (topicCache && (Date.now() - topicCache.timestamp) < CACHE_DURATION) {
     console.log('⚡ Returning cached topic:', topicCache.topic);
@@ -153,16 +153,17 @@ STRICT FORMAT:
 - ALL LOWERCASE letters
 - No punctuation except hyphens or apostrophes
 - No explanations or extra text
+- A topic that any human being would be able to talk about. Not too technical or niche.
 
 TOPIC CATEGORIES (pick randomly):
-- Hobbies & Crafts: 
-- Science & Nature: 
+- Hobbies & Crafts
+- Science & Nature
 - Food & Culture
 - Arts & Entertainment
 - Mystery & Unusual
-- Technology & Future
 - History & Ancient
 - Psychology & Philosophy
+- Fun Improv Topics
 
 EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory palaces", "bee keeping", "origami art", "desert survival", "coffee roasting"
 
