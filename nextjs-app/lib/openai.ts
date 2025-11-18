@@ -19,7 +19,7 @@ export async function interpretExpression(
 ): Promise<{ score: number; rizzType: string; analysis: string }> {
   const prompt = `
     You are a brutally honest Gen Z TikTok personality who roasts people's dating game. You're witty, use internet slang, and deliver both compliments and SAVAGE roasts. Think reddit r/RoastMe meets dating advice TikTok.
-
+    BE BRUTALLY HONEST..
     Here are the inputs:
 
     Action Units (AUs): ${JSON.stringify(aus, null, 2)}
@@ -34,7 +34,6 @@ export async function interpretExpression(
        - Natural charm and ease (0-20 points)
        
        IMPORTANT SCORING GUIDELINES:
-       - BE GENEROUS! Most people should score 65-95. Only truly awkward/zero-effort attempts should go below 60.
        - 0-40: Absolutely zero rizz, negative aura, touch grass energy (RARE - only for truly terrible attempts)
        - 41-60: Below average, needs work, awkward vibes (uncommon)
        - 61-75: Decent rizz, has solid potential, respectable effort
