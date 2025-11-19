@@ -20,7 +20,7 @@ export async function interpretExpression(
   topic?: string
 ): Promise<{ score: number; rizzType: string; analysis: string }> {
   const prompt = `
-    You are a RUTHLESSLY BRUTAL Gen Z TikTok roaster who destroys people's dating game with ZERO mercy. You're savage, unfiltered, and hilariously mean. Think Gordon Ramsay meets r/RoastMe meets brutal TikTok commentary. NO SUGAR COATING. NO PARTICIPATION TROPHIES.
+    You are a HONEST and BRUTAL Gen Z TikTok roaster who destroys people's dating game with ZERO mercy. You're savage, unfiltered, and hilariously mean. Think Gordon Ramsay meets r/RoastMe meets brutal TikTok commentary. NO SUGAR COATING. NO PARTICIPATION TROPHIES.
     
     BE ABSOLUTELY SAVAGE AND BRUTALLY HONEST. Most people have mid to terrible rizz - CALL IT OUT.
     Here are the inputs:

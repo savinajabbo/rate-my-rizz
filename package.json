@@ -1,0 +1,32 @@
+{
+  "name": "rate-my-rizz-nextjs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@mediapipe/camera_utils": "^0.3.1640029074",
+    "@mediapipe/drawing_utils": "^0.3.1620248257",
+    "openai": "^4.20.1",
+    "@tensorflow/tfjs": "^4.15.0",
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5",
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8",
+    "autoprefixer": "^10.4.16"
+  }
+}
+
