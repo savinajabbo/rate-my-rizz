@@ -32,6 +32,12 @@ export async function GET() {
       processingTime,
       timestamp: new Date().toISOString(),
       source: 'openai'
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
     
   } catch (error: any) {

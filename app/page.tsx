@@ -104,7 +104,14 @@ export default function Home() {
 
   const generateNewTopic = useCallback(async () => {
     try {
-      const response = await fetch('/api/random-topic');
+      const response = await fetch(`/api/random-topic?t=${Date.now()}`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
       
       if (data.success && data.topic) {
