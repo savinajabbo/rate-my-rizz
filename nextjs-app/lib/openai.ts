@@ -17,7 +17,7 @@ export async function interpretExpression(
   aus: Record<string, number>,
   metrics: Record<string, number>,
   transcription?: string,
-  audioTone?: Record<string, number>
+  topic?: string
 ): Promise<{ score: number; rizzType: string; analysis: string }> {
   const prompt = `
     You are a RUTHLESSLY BRUTAL Gen Z TikTok roaster who destroys people's dating game with ZERO mercy. You're savage, unfiltered, and hilariously mean. Think Gordon Ramsay meets r/RoastMe meets brutal TikTok commentary. NO SUGAR COATING. NO PARTICIPATION TROPHIES.
@@ -34,9 +34,6 @@ export async function interpretExpression(
     
     === WHAT THEY SAID (Audio Transcription) ===
     ${transcription || 'No speech detected - they said NOTHING (MAJOR RED FLAG - subtract 15-20 points for being silent/boring)'}
-    
-    === AUDIO TONE ANALYSIS ===
-    ${audioTone ? JSON.stringify(audioTone, null, 2) : 'No audio tone data available'}
     
     STEP 1: DEEP FACIAL ANALYSIS - EXAMINE EVERY METRIC IN DETAIL:
     
@@ -270,45 +267,6 @@ export async function interpretExpression(
       * Directly engaged with topic: Add 10-15 points
       * Creative/interesting take on topic: Add 15-25 points
     
-    === AUDIO TONE ANALYSIS ===
-    If audio tone data is available, analyze vocal characteristics:
-    
-    avgPitch (Hz):
-    - 80-120: Very deep voice (add 5 points for confidence)
-    - 120-180: Deep/low voice (add 3 points)
-    - 180-250: Normal range (neutral)
-    - 250-350: Higher voice (neutral to slight negative)
-    - 350+: Very high/squeaky (subtract 5 points)
-    
-    pitchVariation (0-1):
-    - 0.0-0.1: Monotone, boring (subtract 10 points)
-    - 0.1-0.3: Some variation (neutral)
-    - 0.3-0.6: Good expressiveness (add 5-10 points)
-    - 0.6+: Very expressive or nervous (add 5 or subtract 5 depending on context)
-    
-    avgVolume (0-1):
-    - 0.0-0.2: Too quiet, no confidence (subtract 10 points)
-    - 0.2-0.4: Quiet but acceptable (slight negative)
-    - 0.4-0.7: Good volume (add 5 points)
-    - 0.7-0.9: Confident volume (add 10 points)
-    - 0.9+: Too loud, aggressive (subtract 5 points)
-    
-    volumeVariation (0-1):
-    - 0.0-0.2: Flat delivery (subtract 5 points)
-    - 0.2-0.5: Good dynamics (add 5 points)
-    - 0.5+: Very dynamic or inconsistent (neutral)
-    
-    speakingRate (samples per second):
-    - 0-5: Very slow/hesitant (subtract 10 points)
-    - 5-15: Normal pace (neutral)
-    - 15-25: Good pace (add 5 points)
-    - 25+: Too fast/nervous (subtract 5 points)
-    
-    confidence (0-1):
-    - 0.0-0.3: Low audio confidence (subtract 5 points)
-    - 0.3-0.7: Moderate confidence (neutral)
-    - 0.7-1.0: High audio confidence (add 5 points)
-    
     STEP 3: NOW PROVIDE THE SCORE based on your calculation above:
     
     1. A RIZZ SCORE from 0-100 that MATCHES your analysis:
@@ -410,51 +368,28 @@ export async function interpretExpression(
   }
 }
 
-const FALLBACK_TOPICS = [
-  'vintage motorcycles', 'deep sea creatures', 'conspiracy theories', 'homemade pasta',
-  'space exploration', 'indoor plants', 'true crime podcasts', 'pickle making',
-  'quantum physics', 'pet turtles', 'vintage vinyl', 'urban legends',
-  'alien abductions', 'sourdough starters', 'medieval history', 'lucid dreaming',
-  'mushroom foraging', 'time travel paradoxes', 'ancient civilizations', 'ghost stories',
-  'fermented foods', 'street art', 'board game design', 'ocean mysteries',
-  'parallel universes', 'coffee roasting', 'forgotten languages', 'cryptozoology',
-  'minimalist living', 'bee keeping', 'aurora borealis', 'vintage cameras',
-  'desert survival', 'memory palaces', 'origami art', 'arctic exploration'
-];
-
 let topicCache: { topic: string; timestamp: number } | null = null;
-const CACHE_DURATION = 1000; 
-
-function getRandomFallbackTopic(): string {
-  const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
-  return FALLBACK_TOPICS[randomIndex];
-}
+const CACHE_DURATION = 0;
 
 function isValidTopic(topic: string): boolean {
-  const words = topic.trim().split(/\s+/);
+  const cleanTopic = topic.trim().toLowerCase();
+  const words = cleanTopic.split(/\s+/);
+  
   return (
     words.length >= 1 && 
-    words.length <= 4 && 
-    topic.length > 3 && 
-    topic.length < 50 &&
-    /^[a-z\s-']+$/.test(topic)
+    words.length <= 6 && 
+    cleanTopic.length > 2 && 
+    cleanTopic.length < 60 &&
+    /^[a-z\s\-']+$/.test(cleanTopic) &&
+    !cleanTopic.includes('  ') && // no double spaces
+    !cleanTopic.includes('undefined') &&
+    !cleanTopic.includes('null') &&
+    !cleanTopic.match(/[0-9]/) && // no numbers
+    !cleanTopic.match(/[^a-z\s\-']/) // only allowed characters
   );
 }
 
 export async function generateRandomDateTopic(): Promise<string> {
-  console.log('generateRandomDateTopic called at:', new Date().toISOString());
-  console.log('Cache check - topicCache exists:', !!topicCache);
-  console.log('Cache check - CACHE_DURATION:', CACHE_DURATION);
-  
-  if (topicCache) {
-    const cacheAge = Date.now() - topicCache.timestamp;
-    console.log('cache age (ms):', cacheAge);
-    console.log('cache check result:', cacheAge < CACHE_DURATION);
-    if (cacheAge < CACHE_DURATION) {
-      console.log('⚡ Returning cached topic:', topicCache.topic);
-      return topicCache.topic;
-    }
-  }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -462,54 +397,46 @@ export async function generateRandomDateTopic(): Promise<string> {
     throw new Error('OPENAI_API_KEY environment variable is required for topic generation');
   }
   
-  console.log('OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
-  console.log('Cache expired or empty, generating NEW topic with OpenAI...');
 
-  const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. Requirements:
+  const prompt = `Generate exactly ONE very specific, quirky conversation topic for a date. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting.
 
-STRICT FORMAT:
-- Exactly 1-10 words only
-- ALL LOWERCASE letters
-- No punctuation except hyphens or apostrophes
-- No explanations or extra text
-- A topic that any human being would be able to talk about. Not too technical or niche.
+REQUIREMENTS:
+1. Return ONLY the topic - no quotes, no explanations
+2. Use 3-8 words maximum  
+3. All lowercase letters only
+4. Make it oddly specific and memorable
+5. Should be weird but relatable and current
 
-TOPIC CATEGORIES (pick randomly):
-- Science & Nature
-- Food & Culture
-- Arts & Entertainment
-- Mystery & Unusual
-- Psychology & Philosophy
-- Fun Improv Topics
+TOPIC CATEGORIES (choose any):
+- weird food combinations - bizarre childhood rituals - strange internet rabbit holes
+- oddly specific fears - weirdest family traditions - most embarrassing purchases  
+- conspiracy theories you believe - weird things you collect - strangest compliments received
+- most useless talents - social media habits - current trends - viral moments
+- random thoughts - modern problems - tech quirks - generational differences
 
-EXAMPLES: "vintage cameras", "pickle burgers", "coffee", "nostalgia for things we never lived through"
+EXAMPLE STYLES:
+eating cereal with orange juice - pretending stairs were lava - three am wikipedia deep dives
+fear of butterflies touching you - backwards christmas morning routine - buying seventeen phone cases
+birds are government drones - collecting vintage bottle caps - nice elbows compliment
+wiggling ears on command - dipping fries in milkshakes - talking to houseplants daily
+tiktok algorithm conspiracy theories - spotify wrapped embarrassment - autocorrect fails
 
-Return ONLY the lowercase topic, nothing else.`;
+Generate ONE random specific topic:`;
 
-  console.log('Calling OpenAI API for topic generation...');
-  
-  const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
-  
   const response = await getClient().chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: uniquePrompt }],
-    max_tokens: 15,
-    temperature: 1.8,
-    presence_penalty: 1.0,
-    frequency_penalty: 1.0,
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 8,
+    temperature: 0.7,
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
-
-  let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
+  let topic = rawTopic.replace(/[^\w\s'-]/g, '').replace(/\s+/g, ' ').trim();
   
   if (!isValidTopic(topic)) {
     throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
-  const now = Date.now();
-  topicCache = { topic, timestamp: now };
-  
   return topic;
 }
 

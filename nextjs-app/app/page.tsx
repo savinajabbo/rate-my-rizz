@@ -12,7 +12,7 @@ export default function Home() {
   const [results, setResults] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [processingStep, setProcessingStep] = useState('');
-  const [randomTopic, setRandomTopic] = useState('mysterious topics');
+  const [randomTopic, setRandomTopic] = useState('click "get new topic" to start');
 
   const auDescriptions: Record<string, string> = {
     'AU01': 'Inner Brow Raiser',
@@ -51,6 +51,9 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const ausDataRef = useRef<Record<string, number>[]>([]);
   const metricsDataRef = useRef<Record<string, number>[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioDataRef = useRef<{ pitch: number; volume: number; timestamp: number }[]>([]);
 
   useEffect(() => {
     const faceMesh = new FaceMesh({
@@ -98,92 +101,127 @@ export default function Home() {
     };
   }, [isRecording]);
 
-  const topics = [
-    'the ethics of time-travel tourism',
-    'why humans love spicy food',
-    'the psychology of fandoms',
-    'how black holes evaporate',
-    'the rise of ai-generated music',
-    'the color "blue" in ancient languages',
-    'why cats loaf',
-    'the future of space mining',
-    'the mandela effect',
-    'the science of déjà vu',
-    'how memes spread like viruses',
-    'deep-sea gigantism',
-    'the trolley problem but with self-driving cars',
-    'quantum entanglement explained simply',
-    'the history of swear words',
-    'dreams vs. memory consolidation',
-    'parallel universes theories',
-    'why pastries taste better in europe',
-    'how planes actually stay in the air',
-    'the psychology of procrastination',
-    'whether aliens would understand human music',
-    'the future of brain–computer interfaces',
-    'why some people crave horror',
-    'how coral reefs communicate',
-    'the mystery of dark matter',
-    'the philosophy of consciousness',
-    'cultural impacts of superhero films',
-    'why we yawn',
-    'micro-habits that change productivity',
-    'origins of common idioms',
-    'the future of renewable energy',
-    'how languages evolve',
-    'the science of attraction',
-    'whether robots can be morally responsible',
-    'the history of the calendar',
-    'why we find certain sounds satisfying (asmr)',
-    'genetic engineering ethics',
-    'the allure of dystopian fiction',
-    'why cities develop unique "vibes"',
-    'the placebo effect',
-    'how music tempo affects mood',
-    'the physics of rainbows',
-    'why toddlers ask "why" nonstop',
-    'internet culture cycles',
-    'the origins of conspiracy theories',
-    'how coffee became a global obsession',
-    'the limits of human memory',
-    'why board games are making a comeback',
-    'the psychology of collecting things'
-  ];
 
   const generateNewTopic = useCallback(async () => {
-    console.log('generateNewTopic called!');
     try {
-      console.log('Calling /api/random-topic...');
       const response = await fetch('/api/random-topic');
       const data = await response.json();
       
-      console.log('API Response:', data);
-      
       if (data.success && data.topic) {
-        console.log('Setting new topic:', data.topic);
         setRandomTopic(data.topic);
       } else {
         console.error('API call failed:', data);
-        const randomIndex = Math.floor(Math.random() * topics.length);
-        const fallbackTopic = topics[randomIndex];
-        console.log('Using fallback topic:', fallbackTopic);
-        setRandomTopic(fallbackTopic);
+        setRandomTopic('API error - please try again');
       }
     } catch (error) {
       console.error('Error calling random topic API:', error);
-      // fallback to hardcoded topics if API fails
-      const randomIndex = Math.floor(Math.random() * topics.length);
-      const fallbackTopic = topics[randomIndex];
-      console.log('Using fallback topic due to error:', fallbackTopic);
-      setRandomTopic(fallbackTopic);
+      setRandomTopic('Network error - please try again');
     }
   }, []);
 
-  // generate random topic on component mount
-  useEffect(() => {
-    console.log('useEffect running - about to call generateNewTopic');
-    generateNewTopic();
-  }, [generateNewTopic]);
+  // No automatic topic generation - user must click "get new topic" button
+
+  const detectPitch = (dataArray: Uint8Array, sampleRate: number): number => {
+    const bufferLength = dataArray.length;
+    const correlations = new Array(bufferLength);
+    
+    for (let lag = 0; lag < bufferLength; lag++) {
+      let sum = 0;
+      for (let i = 0; i < bufferLength - lag; i++) {
+        sum += dataArray[i] * dataArray[i + lag];
+      }
+      correlations[lag] = sum;
+    }
+    
+    let maxCorrelation = 0;
+    let bestLag = 0;
+    
+    for (let lag = 20; lag < bufferLength / 2; lag++) {
+      if (correlations[lag] > maxCorrelation) {
+        maxCorrelation = correlations[lag];
+        bestLag = lag;
+      }
+    }
+    
+    return bestLag > 0 ? sampleRate / bestLag : 0;
+  };
+
+  const startAudioAnalysis = () => {
+    if (!analyserRef.current) return;
+    
+    const bufferLength = analyserRef.current.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const timeDataArray = new Uint8Array(bufferLength);
+    
+    const analyze = () => {
+      if (!analyserRef.current || !isRecording) return;
+      
+      analyserRef.current.getByteFrequencyData(dataArray);
+      analyserRef.current.getByteTimeDomainData(timeDataArray);
+      
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const volume = sum / bufferLength / 255;
+      
+      const pitch = detectPitch(timeDataArray, audioContextRef.current?.sampleRate || 44100);
+      
+      if (volume > 0.01) {
+        audioDataRef.current.push({
+          pitch: pitch,
+          volume: volume,
+          timestamp: Date.now()
+        });
+      }
+      
+      if (isRecording) {
+        requestAnimationFrame(analyze);
+      }
+    };
+    
+    analyze();
+  };
+
+  const calculateAudioToneMetrics = () => {
+    if (audioDataRef.current.length === 0) {
+      return {
+        avgPitch: 0,
+        pitchVariation: 0,
+        avgVolume: 0,
+        volumeVariation: 0,
+        speakingRate: 0,
+        confidence: 0
+      };
+    }
+
+    const pitches = audioDataRef.current.map(d => d.pitch).filter(p => p > 50 && p < 500);
+    const volumes = audioDataRef.current.map(d => d.volume);
+    
+    const avgPitch = pitches.length > 0 ? pitches.reduce((a, b) => a + b, 0) / pitches.length : 0;
+    const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+    
+    const pitchVariation = pitches.length > 1 ? 
+      Math.sqrt(pitches.reduce((sum, p) => sum + Math.pow(p - avgPitch, 2), 0) / pitches.length) / avgPitch : 0;
+    
+    const volumeVariation = volumes.length > 1 ?
+      Math.sqrt(volumes.reduce((sum, v) => sum + Math.pow(v - avgVolume, 2), 0) / volumes.length) / avgVolume : 0;
+    
+    const totalTime = audioDataRef.current.length > 0 ? 
+      (audioDataRef.current[audioDataRef.current.length - 1].timestamp - audioDataRef.current[0].timestamp) / 1000 : 0;
+    
+    const speakingRate = totalTime > 0 ? audioDataRef.current.length / totalTime : 0;
+    const confidence = Math.min(1, audioDataRef.current.length / 100);
+
+    return {
+      avgPitch: Math.round(avgPitch),
+      pitchVariation: Math.round(pitchVariation * 100) / 100,
+      avgVolume: Math.round(avgVolume * 100) / 100,
+      volumeVariation: Math.round(volumeVariation * 100) / 100,
+      speakingRate: Math.round(speakingRate * 10) / 10,
+      confidence: Math.round(confidence * 100) / 100
+    };
+  };
 
   const startRecording = async () => {
     try {
@@ -202,6 +240,12 @@ export default function Home() {
       const videoStream = new MediaStream([videoTrack]);
       const audioStream = new MediaStream([audioTrack]);
 
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaStreamSource(audioStream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      source.connect(analyserRef.current);
+
       const videoRecorder = new MediaRecorder(videoStream, {
         mimeType: 'video/webm;codecs=vp8',
         videoBitsPerSecond: 250000,
@@ -215,6 +259,9 @@ export default function Home() {
       audioChunksRef.current = [];
       ausDataRef.current = [];
       metricsDataRef.current = [];
+      audioDataRef.current = [];
+
+      startAudioAnalysis();
 
       videoRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) videoChunksRef.current.push(e.data);
@@ -259,6 +306,11 @@ export default function Home() {
     setIsRecording(false);
     setStatus('Processing your rizz...');
     setProcessingStep('Preparing files...');
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
 
     const videoStopped = new Promise<void>((resolve) => {
       mediaRecorderRef.current!.video.onstop = () => resolve();
@@ -308,11 +360,14 @@ export default function Home() {
     const freshVideoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
     const freshAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
     
+    const audioToneData = calculateAudioToneMetrics();
+    
     const formData = new FormData();
     formData.append('video', freshVideoBlob, 'recording.webm');
     formData.append('audio', freshAudioBlob, 'recording.webm');
     formData.append('aus', JSON.stringify(avgAUs));
     formData.append('metrics', JSON.stringify(avgMetrics));
+    formData.append('audioTone', JSON.stringify(audioToneData));
     formData.append('topic', randomTopic);
 
     try {

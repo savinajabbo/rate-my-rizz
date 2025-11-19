@@ -4,9 +4,6 @@ import { generateRandomDateTopic } from '@/lib/openai';
 export async function GET() {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(7);
-  console.log('🟢 Random topic API called at:', new Date().toISOString(), 'Request ID:', requestId);
-  console.log('🟢 Environment check - API key exists:', !!process.env.OPENAI_API_KEY);
-  console.log('🟢 Environment check - API key length:', process.env.OPENAI_API_KEY?.length || 0);
   
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -25,31 +22,17 @@ export async function GET() {
         { status: 500 }
       );
     }
-
-    console.log('🟢 Generating random date topic with OpenAI... Request ID:', requestId);
     const topic = await generateRandomDateTopic();
     const processingTime = Date.now() - startTime;
     
-    console.log(`🟢 Successfully generated topic: "${topic}" (${processingTime}ms) Request ID: ${requestId}`);
     
-    return NextResponse.json(
-      { 
-        topic,
-        success: true,
-        processingTime,
-        timestamp: new Date().toISOString(),
-        source: 'openai'
-      }, 
-      {
-        status: 200,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-          'X-Processing-Time': `${processingTime}ms`
-        }
-      }
-    );
+    return NextResponse.json({ 
+      topic,
+      success: true,
+      processingTime,
+      timestamp: new Date().toISOString(),
+      source: 'openai'
+    });
     
   } catch (error: any) {
     const processingTime = Date.now() - startTime;
@@ -59,7 +42,6 @@ export async function GET() {
       processingTime
     });
     
-    // Return detailed error information
     return NextResponse.json(
       { 
         error: 'Failed to generate topic with OpenAI API',
