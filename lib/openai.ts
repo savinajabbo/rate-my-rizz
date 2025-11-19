@@ -398,7 +398,31 @@ export async function generateRandomDateTopic(): Promise<string> {
   }
   
 
-  const prompt = `Generate exactly ONE very specific, quirky conversation topic for a date. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting.
+  const randomSeed = Math.floor(Math.random() * 1000000);
+  const timestamp = Date.now();
+  const randomCategory = [
+    'weird food combinations and guilty pleasures',
+    'oddly specific fears and irrational anxieties',
+    'conspiracy theories and internet rabbit holes',
+    'useless talents and party tricks',
+    'social media habits and digital behaviors',
+    'current trends and viral moments',
+    'random thoughts and shower thoughts',
+    'modern problems and first world problems',
+    'tech quirks and app frustrations',
+    'generational differences and age gaps',
+    'childhood memories and nostalgia',
+    'embarrassing moments and cringe stories',
+    'weird collections and hoarding habits',
+    'strange compliments and backhanded praise',
+    'dating app experiences and online dating',
+    'work stories and office drama',
+    'travel mishaps and vacation disasters',
+    'sleep habits and bedtime routines',
+    'philosophy and life lessons'
+  ][Math.floor(Math.random() * 19)];
+
+  const prompt = `Generate exactly ONE very specific, quirky conversation topic for a date. This is request #${randomSeed} at ${timestamp}. Generate a COMPLETELY DIFFERENT topic than any previous response. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting.
 
     REQUIREMENTS:
     1. Return ONLY the topic - no quotes, no explanations
@@ -406,7 +430,8 @@ export async function generateRandomDateTopic(): Promise<string> {
     3. All lowercase letters only
     4. Make it oddly specific and memorable
     5. Should be fun but relatable and current
-    6. Occasionally include a deep and honest topic that is not too personal but still interesting.
+    6. Focus on: ${randomCategory}
+    7. Generate something COMPLETELY UNIQUE - do not repeat previous topics
 
     TOPIC CATEGORIES EXAMPLES:
     - weird food combinations and guilty pleasures
@@ -436,13 +461,15 @@ export async function generateRandomDateTopic(): Promise<string> {
     wiggling ears on command - dipping fries in milkshakes - talking to houseplants daily
     tiktok algorithm conspiracy theories - spotify wrapped embarrassment - autocorrect fails
 
-    Generate ONE random specific topic:`;
+    Generate ONE completely unique and different topic (seed: ${randomSeed}):`;
 
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    max_tokens: 8,
-    temperature: 0.7,
+    max_tokens: 10,
+    temperature: 1.2,
+    presence_penalty: 0.8,
+    frequency_penalty: 0.8,
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
