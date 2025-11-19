@@ -26,20 +26,38 @@ export async function interpretExpression(
     Action Units (AUs): ${JSON.stringify(aus, null, 2)}
     Psychological Metrics: ${JSON.stringify(metrics, null, 2)}
     
-    Analyze this person's "rizz" (charisma, charm, flirting ability) by CAREFULLY examining the metrics:
-    - High AU12 (smile) + AU06 (cheek raise) = genuine warmth (GOOD)
-    - High tension_index = nervous/stiff (BAD)
-    - High confidence_index = natural ease (GOOD)
-    - Low eye_openness = disengaged (BAD)
-    - Good smile_symmetry = authentic expression (GOOD)
+    STEP 1: ANALYZE THE DATA CAREFULLY - DO THE MATH:
     
-    Now provide:
+    Look at the Action Units (AUs):
+    - AU12 (Lip Corner Puller/Smile): If < 0.3 = barely smiling (BAD), 0.3-0.6 = decent smile, > 0.6 = great smile (GOOD)
+    - AU06 (Cheek Raiser): If < 0.2 = fake/no smile (BAD), > 0.4 = genuine smile (GOOD)
+    - AU01/AU02 (Brow Raisers): If > 0.5 = surprised/awkward (BAD)
+    - AU04 (Brow Lowerer): If > 0.4 = angry/tense (BAD)
+    - AU25/AU26 (Mouth open): If both low = stiff/unexpressive (BAD)
     
-    1. A RIZZ SCORE from 0-100 based on:
-       - Confidence and authenticity (0-30 points)
-       - Facial expressiveness and warmth (0-25 points)
-       - Emotional engagement and presence (0-25 points)
-       - Natural charm and ease (0-20 points)
+    Look at the Psychological Metrics:
+    - tension_index: If > 0.6 = very tense/nervous (MAJOR PENALTY -20 points)
+    - confidence_index: If < 0.4 = low confidence (PENALTY -15 points), > 0.7 = confident (BONUS +15 points)
+    - eye_openness: If < 0.3 = disengaged/bored (PENALTY -10 points)
+    - smile_symmetry: If < 0.7 = asymmetric/fake (PENALTY -10 points), > 0.85 = genuine (BONUS +10 points)
+    - mouth_openness: If < 0.2 = stiff/closed off (PENALTY -10 points)
+    
+    STEP 2: CALCULATE THE SCORE BY ADDING/SUBTRACTING:
+    Start at 50 (baseline average), then:
+    - Strong genuine smile (AU12 > 0.5 AND AU06 > 0.3): +15 points
+    - No smile or weak smile (AU12 < 0.3): -20 points
+    - High tension (tension_index > 0.6): -20 points
+    - Low confidence (confidence_index < 0.4): -15 points
+    - Good confidence (confidence_index > 0.7): +15 points
+    - Expressive face (multiple AUs active): +10 points
+    - Stiff/monotone face (few AUs active): -15 points
+    - Poor eye contact (eye_openness < 0.3): -10 points
+    - Asymmetric smile (smile_symmetry < 0.7): -10 points
+    
+    STEP 3: NOW PROVIDE THE SCORE based on your calculation above:
+    
+    1. A RIZZ SCORE from 0-100 that MATCHES your analysis:
+       Your score MUST reflect the actual data. Straight face with no smile = 30-45. Tense and awkward = 25-40. Natural and confident = 70-85.
        
        BRUTAL SCORING GUIDELINES - BE HARSH:
        - 0-25: NEGATIVE RIZZ. Repulsive energy, makes people uncomfortable, restraining order vibes
@@ -73,6 +91,13 @@ export async function interpretExpression(
        - "i'm sorry but this is giving 'i've never spoken to another human before' energy. the facial expressions are fighting for their lives. my advice? delete this and start over. maybe touch some grass first."
     
     Be SAVAGE, be BRUTAL, be HILARIOUSLY MEAN. Roast them into oblivion if they deserve it. USE THE FULL 0-100 RANGE. Most people should score 40-70. Only truly impressive performances get 80+. BE HARSH!
+    
+    CRITICAL FINAL CHECK:
+    - Did you actually look at the AU values? If AU12 < 0.3, they're NOT smiling - score should be LOW (30-45)
+    - Did you check tension_index? If > 0.6, they're nervous - MAJOR PENALTY
+    - Did you check confidence_index? If < 0.4, they lack confidence - score should be LOW
+    - Your score MUST match the data. A straight face cannot score 70+. A tense person cannot score 75+.
+    - If someone has low expressiveness + high tension + no smile = they should score 25-45 MAX
     
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
