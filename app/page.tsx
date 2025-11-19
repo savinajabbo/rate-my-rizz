@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FaceMesh } from '@mediapipe/face_mesh';
-import { Camera } from '@mediapipe/camera_utils';
+// Dynamic imports for MediaPipe to avoid SSR issues
 import { computeAUs } from '@/lib/auFeature';
 import { computeMetrics } from '@/lib/metrics';
 
@@ -44,8 +43,8 @@ export default function Home() {
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const faceMeshRef = useRef<FaceMesh | null>(null);
-  const cameraRef = useRef<Camera | null>(null);
+  const faceMeshRef = useRef<any | null>(null);
+  const cameraRef = useRef<any | null>(null);
   const mediaRecorderRef = useRef<{ video: MediaRecorder; audio: MediaRecorder } | null>(null);
   const videoChunksRef = useRef<Blob[]>([]);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -56,11 +55,14 @@ export default function Home() {
   const audioDataRef = useRef<{ pitch: number; volume: number; timestamp: number }[]>([]);
 
   useEffect(() => {
-    const faceMesh = new FaceMesh({
-      locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-      },
-    });
+    const initializeMediaPipe = async () => {
+      try {
+        const { FaceMesh } = await import('@mediapipe/face_mesh');
+        const faceMesh = new FaceMesh({
+          locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          },
+        });
 
     faceMesh.setOptions({
       maxNumFaces: 1,
@@ -85,6 +87,7 @@ export default function Home() {
     faceMeshRef.current = faceMesh;
 
     if (videoRef.current) {
+      const { Camera } = await import('@mediapipe/camera_utils');
       const camera = new Camera(videoRef.current, {
         onFrame: async () => {
           await faceMesh.send({ image: videoRef.current! });
@@ -95,6 +98,12 @@ export default function Home() {
       camera.start();
       cameraRef.current = camera;
     }
+      } catch (error) {
+        console.error('MediaPipe initialization failed:', error);
+      }
+    };
+    
+    initializeMediaPipe();
 
     return () => {
       cameraRef.current?.stop();
@@ -103,8 +112,12 @@ export default function Home() {
 
 
   const generateNewTopic = useCallback(async () => {
+    console.log('generateNewTopic called - starting API request');
     try {
-      const response = await fetch(`/api/random-topic?t=${Date.now()}`, {
+      const url = `/api/random-topic?t=${Date.now()}`;
+      console.log('Fetching URL:', url);
+      
+      const response = await fetch(url, {
         method: 'GET',
         cache: 'no-store',
         headers: {
@@ -112,10 +125,15 @@ export default function Home() {
           'Pragma': 'no-cache'
         }
       });
+      
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success && data.topic) {
+        console.log('Setting new topic:', data.topic);
         setRandomTopic(data.topic);
+        console.log('Topic state updated');
       } else {
         console.error('API call failed:', data);
         setRandomTopic('API error - please try again');
@@ -495,9 +513,10 @@ export default function Home() {
           your date is talking about <span className="underline decoration-wavy">{randomTopic}</span>
         </p>
         <button 
-          onClick={() => {
-            console.log('BUTTON CLICKED!!!');
-            generateNewTopic();
+          onClick={async () => {
+            console.log('BUTTON CLICKED!!! Current topic:', randomTopic);
+            await generateNewTopic();
+            console.log('After generateNewTopic, topic should be:', randomTopic);
           }}
           className="text-sm font-bold opacity-70 hover:opacity-100 transition-all underline hover:scale-105 cursor-pointer"
           style={{color: '#AE2D80'}}

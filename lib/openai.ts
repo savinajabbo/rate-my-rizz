@@ -400,28 +400,43 @@ export async function generateRandomDateTopic(): Promise<string> {
 
   const prompt = `Generate exactly ONE very specific, quirky conversation topic for a date. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting.
 
-REQUIREMENTS:
-1. Return ONLY the topic - no quotes, no explanations
-2. Use 3-8 words maximum  
-3. All lowercase letters only
-4. Make it oddly specific and memorable
-5. Should be weird but relatable and current
+    REQUIREMENTS:
+    1. Return ONLY the topic - no quotes, no explanations
+    2. Use 1-10 words maximum  
+    3. All lowercase letters only
+    4. Make it oddly specific and memorable
+    5. Should be fun but relatable and current
+    6. Occasionally include a deep and honest topic that is not too personal but still interesting.
 
-TOPIC CATEGORIES (choose any):
-- weird food combinations - bizarre childhood rituals - strange internet rabbit holes
-- oddly specific fears - weirdest family traditions - most embarrassing purchases  
-- conspiracy theories you believe - weird things you collect - strangest compliments received
-- most useless talents - social media habits - current trends - viral moments
-- random thoughts - modern problems - tech quirks - generational differences
+    TOPIC CATEGORIES EXAMPLES:
+    - weird food combinations and guilty pleasures
+    - oddly specific fears and irrational anxieties
+    - conspiracy theories and internet rabbit holes
+    - useless talents and party tricks
+    - social media habits and digital behaviors
+    - current trends and viral moments
+    - random thoughts and shower thoughts
+    - modern problems and first world problems
+    - tech quirks and app frustrations
+    - generational differences and age gaps
+    - childhood memories and nostalgia
+    - embarrassing moments and cringe stories
+    - weird collections and hoarding habits
+    - strange compliments and backhanded praise
+    - dating app experiences and online dating
+    - work stories and office drama
+    - travel mishaps and vacation disasters
+    - sleep habits and bedtime routines
+    - philosophy and life lessons
 
-EXAMPLE STYLES:
-eating cereal with orange juice - pretending stairs were lava - three am wikipedia deep dives
-fear of butterflies touching you - backwards christmas morning routine - buying seventeen phone cases
-birds are government drones - collecting vintage bottle caps - nice elbows compliment
-wiggling ears on command - dipping fries in milkshakes - talking to houseplants daily
-tiktok algorithm conspiracy theories - spotify wrapped embarrassment - autocorrect fails
+    EXAMPLE STYLES:
+    eating cereal with orange juice - pretending stairs were lava - three am wikipedia deep dives
+    fear of butterflies touching you - backwards christmas morning routine - buying seventeen phone cases
+    birds are government drones - collecting vintage bottle caps - nice elbows compliment
+    wiggling ears on command - dipping fries in milkshakes - talking to houseplants daily
+    tiktok algorithm conspiracy theories - spotify wrapped embarrassment - autocorrect fails
 
-Generate ONE random specific topic:`;
+    Generate ONE random specific topic:`;
 
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
