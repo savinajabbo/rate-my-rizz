@@ -372,6 +372,9 @@ const FALLBACK_TOPICS = [
 let topicCache: { topic: string; timestamp: number } | null = null;
 const CACHE_DURATION = 0; // Disabled for testing - set to 5 * 60 * 1000 for production
 
+// Keep track of recently generated topics to avoid repetition
+let recentTopics: string[] = [];
+
 function getRandomFallbackTopic(): string {
   const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
   return FALLBACK_TOPICS[randomIndex];
@@ -429,39 +432,49 @@ EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory pala
 Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
+  console.log('Recent topics to avoid:', recentTopics);
   
-  const randomSeed = Math.random().toString(36).substring(7);
-  const uniquePrompt = prompt + `\n\nIMPORTANT: Generate a completely DIFFERENT and UNIQUE topic. Random seed: ${randomSeed}`;
+  // Build prompt with topics to avoid
+  let avoidList = '';
+  if (recentTopics.length > 0) {
+    avoidList = `\n\nDO NOT generate any of these topics (already used): ${recentTopics.join(', ')}`;
+  }
+  
+  const uniquePrompt = prompt + avoidList + `\n\nGenerate a COMPLETELY DIFFERENT topic. Random: ${Math.random()}`;
   
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: uniquePrompt }],
     max_tokens: 12,
-    temperature: 1.4, //
-    presence_penalty: 0.8, // Encourage variety
-    frequency_penalty: 0.8, // Discourage repetition
+    temperature: 1.5,
+    presence_penalty: 0.9,
+    frequency_penalty: 0.9,
+    seed: Math.floor(Math.random() * 1000000),
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
   console.log('OpenAI raw response:', rawTopic);
   
-  // Clean up the topic - remove any extra characters, quotes, or punctuation
   let topic = rawTopic
-    .replace(/["""]/g, '') // Remove quotes
-    .replace(/[^\w\s'-]/g, '') // Remove special chars except hyphens and apostrophes
-    .replace(/\s+/g, ' ') // Normalize spaces
+    .replace(/["""]/g, '')
+    .replace(/[^\w\s'-]/g, '') 
+    .replace(/\s+/g, ' ')
     .trim();
   
   console.log('Cleaned topic:', topic);
   
-  // Validate the topic
-  if (!isValidTopic(topic)) {
+    if (!isValidTopic(topic)) {
     console.warn('Generated topic failed validation:', topic);
     console.log('Using fallback topic instead');
     topic = getRandomFallbackTopic();
   }
 
-  // Cache the valid topic
+  // Add to recent topics list (keep last 10)
+  recentTopics.push(topic);
+  if (recentTopics.length > 10) {
+    recentTopics.shift(); // Remove oldest
+  }
+  
   topicCache = { topic, timestamp: Date.now() };
   
   console.log('Final topic:', topic);
