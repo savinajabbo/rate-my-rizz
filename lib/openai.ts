@@ -430,29 +430,38 @@ Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
   
-  // Add timestamp to make each request unique
-  const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
+  const randomSeed = Math.random().toString(36).substring(7);
+  const uniquePrompt = prompt + `\n\nIMPORTANT: Generate a completely DIFFERENT and UNIQUE topic. Random seed: ${randomSeed}`;
   
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: uniquePrompt }],
-    max_tokens: 15,
-    temperature: 1.8, // Maximum randomness
-    presence_penalty: 1.0, // Strongly discourage repetition
-    frequency_penalty: 1.0, // Strongly discourage common patterns
+    max_tokens: 12,
+    temperature: 1.4, //
+    presence_penalty: 0.8, // Encourage variety
+    frequency_penalty: 0.8, // Discourage repetition
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
   console.log('OpenAI raw response:', rawTopic);
-  console.log('API call completed successfully!');
-
-  let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
   
+  // Clean up the topic - remove any extra characters, quotes, or punctuation
+  let topic = rawTopic
+    .replace(/["""]/g, '') // Remove quotes
+    .replace(/[^\w\s'-]/g, '') // Remove special chars except hyphens and apostrophes
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .trim();
+  
+  console.log('Cleaned topic:', topic);
+  
+  // Validate the topic
   if (!isValidTopic(topic)) {
-    console.warn('Generated topic failed validation:', topic, 'Retrying...');
-    throw new Error(`Generated topic "${topic}" failed validation criteria`);
+    console.warn('Generated topic failed validation:', topic);
+    console.log('Using fallback topic instead');
+    topic = getRandomFallbackTopic();
   }
 
+  // Cache the valid topic
   topicCache = { topic, timestamp: Date.now() };
   
   console.log('Final topic:', topic);
