@@ -370,10 +370,7 @@ const FALLBACK_TOPICS = [
 ];
 
 let topicCache: { topic: string; timestamp: number } | null = null;
-const CACHE_DURATION = 0; // Disabled for testing - set to 5 * 60 * 1000 for production
-
-// Keep track of recently generated topics to avoid repetition
-let recentTopics: string[] = [];
+const CACHE_DURATION = 0; 
 
 function getRandomFallbackTopic(): string {
   const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
@@ -432,49 +429,30 @@ EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory pala
 Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
-  console.log('Recent topics to avoid:', recentTopics);
   
-  // Build prompt with topics to avoid
-  let avoidList = '';
-  if (recentTopics.length > 0) {
-    avoidList = `\n\nDO NOT generate any of these topics (already used): ${recentTopics.join(', ')}`;
-  }
-  
-  const uniquePrompt = prompt + avoidList + `\n\nGenerate a COMPLETELY DIFFERENT topic. Random: ${Math.random()}`;
+  // Add timestamp to make each request unique
+  const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
   
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: uniquePrompt }],
-    max_tokens: 12,
-    temperature: 1.5,
-    presence_penalty: 0.9,
-    frequency_penalty: 0.9,
-    seed: Math.floor(Math.random() * 1000000),
+    max_tokens: 15,
+    temperature: 1.8, // Maximum randomness
+    presence_penalty: 1.0, // Strongly discourage repetition
+    frequency_penalty: 1.0, // Strongly discourage common patterns
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
   console.log('OpenAI raw response:', rawTopic);
+  console.log('API call completed successfully!');
+
+  let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
   
-  let topic = rawTopic
-    .replace(/["""]/g, '')
-    .replace(/[^\w\s'-]/g, '') 
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  console.log('Cleaned topic:', topic);
-  
-    if (!isValidTopic(topic)) {
-    console.warn('Generated topic failed validation:', topic);
-    console.log('Using fallback topic instead');
-    topic = getRandomFallbackTopic();
+  if (!isValidTopic(topic)) {
+    console.warn('Generated topic failed validation:', topic, 'Retrying...');
+    throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
-  // Add to recent topics list (keep last 10)
-  recentTopics.push(topic);
-  if (recentTopics.length > 10) {
-    recentTopics.shift(); // Remove oldest
-  }
-  
   topicCache = { topic, timestamp: Date.now() };
   
   console.log('Final topic:', topic);

@@ -430,29 +430,27 @@ Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
   
+  // Add timestamp to make each request unique
+  const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
+  
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 12,
-    temperature: 2.0, 
-    top_p: 0.95,
+    messages: [{ role: 'user', content: uniquePrompt }],
+    max_tokens: 15,
+    temperature: 1.8, // Maximum randomness
+    presence_penalty: 1.0, // Strongly discourage repetition
+    frequency_penalty: 1.0, // Strongly discourage common patterns
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
   console.log('OpenAI raw response:', rawTopic);
+  console.log('API call completed successfully!');
+
+  let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
   
-  let topic = rawTopic
-    .replace(/["""]/g, '')
-    .replace(/[^\w\s'-]/g, '') 
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  console.log('Cleaned topic:', topic);
-  
-    if (!isValidTopic(topic)) {
-    console.warn('Generated topic failed validation:', topic);
-    console.log('Using fallback topic instead');
-    topic = getRandomFallbackTopic();
+  if (!isValidTopic(topic)) {
+    console.warn('Generated topic failed validation:', topic, 'Retrying...');
+    throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
   topicCache = { topic, timestamp: Date.now() };
