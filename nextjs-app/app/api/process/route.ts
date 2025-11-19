@@ -138,7 +138,8 @@ export async function POST(request: NextRequest) {
     let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
       console.log('starting ai analysis...');
-      rizzResult = await interpretExpression(aus, metrics);
+      console.log('transcription:', transcription);
+      rizzResult = await interpretExpression(aus, metrics, transcription);
       console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);
