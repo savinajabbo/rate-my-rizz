@@ -429,12 +429,17 @@ EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory pala
 Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
+  
+  // Add timestamp to make each request unique
+  const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
+  
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: uniquePrompt }],
     max_tokens: 15,
-    temperature: 1.3,
-    presence_penalty: 0.6,
+    temperature: 1.8, // Maximum randomness
+    presence_penalty: 1.0, // Strongly discourage repetition
+    frequency_penalty: 1.0, // Strongly discourage common patterns
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
