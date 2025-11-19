@@ -26,33 +26,212 @@ export async function interpretExpression(
     Action Units (AUs): ${JSON.stringify(aus, null, 2)}
     Psychological Metrics: ${JSON.stringify(metrics, null, 2)}
     
-    STEP 1: ANALYZE THE DATA CAREFULLY - DO THE MATH:
+    STEP 1: DEEP FACIAL ANALYSIS - EXAMINE EVERY METRIC IN DETAIL:
     
-    Look at the Action Units (AUs):
-    - AU12 (Lip Corner Puller/Smile): If < 0.3 = barely smiling (BAD), 0.3-0.6 = decent smile, > 0.6 = great smile (GOOD)
-    - AU06 (Cheek Raiser): If < 0.2 = fake/no smile (BAD), > 0.4 = genuine smile (GOOD)
-    - AU01/AU02 (Brow Raisers): If > 0.5 = surprised/awkward (BAD)
-    - AU04 (Brow Lowerer): If > 0.4 = angry/tense (BAD)
-    - AU25/AU26 (Mouth open): If both low = stiff/unexpressive (BAD)
+    === ACTION UNITS (AUs) ANALYSIS ===
+    These measure specific facial muscle movements. Analyze EACH ONE:
     
-    Look at the Psychological Metrics:
-    - tension_index: If > 0.6 = very tense/nervous (MAJOR PENALTY -20 points)
-    - confidence_index: If < 0.4 = low confidence (PENALTY -15 points), > 0.7 = confident (BONUS +15 points)
-    - eye_openness: If < 0.3 = disengaged/bored (PENALTY -10 points)
-    - smile_symmetry: If < 0.7 = asymmetric/fake (PENALTY -10 points), > 0.85 = genuine (BONUS +10 points)
-    - mouth_openness: If < 0.2 = stiff/closed off (PENALTY -10 points)
+    AU01 (Inner Brow Raiser):
+    - Value 0.0-0.2: Relaxed, neutral (normal)
+    - Value 0.2-0.4: Slight concern or interest (acceptable)
+    - Value 0.4-0.7: Surprised, worried, or trying too hard (NEGATIVE - subtract points)
+    - Value 0.7-1.0: Extremely surprised/shocked, very awkward (MAJOR NEGATIVE)
     
-    STEP 2: CALCULATE THE SCORE BY ADDING/SUBTRACTING:
-    Start at 50 (baseline average), then:
-    - Strong genuine smile (AU12 > 0.5 AND AU06 > 0.3): +15 points
-    - No smile or weak smile (AU12 < 0.3): -20 points
-    - High tension (tension_index > 0.6): -20 points
-    - Low confidence (confidence_index < 0.4): -15 points
-    - Good confidence (confidence_index > 0.7): +15 points
-    - Expressive face (multiple AUs active): +10 points
-    - Stiff/monotone face (few AUs active): -15 points
-    - Poor eye contact (eye_openness < 0.3): -10 points
-    - Asymmetric smile (smile_symmetry < 0.7): -10 points
+    AU02 (Outer Brow Raiser):
+    - Value 0.0-0.2: Neutral (normal)
+    - Value 0.2-0.4: Engaged, attentive (slight positive)
+    - Value 0.4-0.7: Over-animated, fake enthusiasm (NEGATIVE)
+    - Value 0.7-1.0: Cartoonishly surprised, unnatural (MAJOR NEGATIVE)
+    
+    AU04 (Brow Lowerer):
+    - Value 0.0-0.2: Relaxed (good)
+    - Value 0.2-0.4: Focused or concentrating (neutral)
+    - Value 0.4-0.6: Tense, angry, or uncomfortable (NEGATIVE - subtract points)
+    - Value 0.6-1.0: Very angry or severely tense (MAJOR NEGATIVE)
+    
+    AU06 (Cheek Raiser):
+    - Value 0.0-0.2: No genuine smile, possibly fake (NEGATIVE)
+    - Value 0.2-0.4: Mild genuine smile (acceptable)
+    - Value 0.4-0.7: Strong genuine smile, warm (POSITIVE - add points)
+    - Value 0.7-1.0: Intense genuine joy, very charismatic (MAJOR POSITIVE)
+    
+    AU07 (Lid Tightener):
+    - Value 0.0-0.3: Relaxed eyes (good)
+    - Value 0.3-0.5: Engaged, focused (neutral)
+    - Value 0.5-0.7: Squinting, tense (NEGATIVE)
+    - Value 0.7-1.0: Very tense or uncomfortable (MAJOR NEGATIVE)
+    
+    AU09 (Nose Wrinkler):
+    - Value 0.0-0.2: Neutral (normal)
+    - Value 0.2-0.5: Slight disgust or discomfort (NEGATIVE)
+    - Value 0.5-1.0: Strong disgust, very off-putting (MAJOR NEGATIVE)
+    
+    AU10 (Upper Lip Raiser):
+    - Value 0.0-0.2: Neutral (normal)
+    - Value 0.2-0.5: Slight sneer or discomfort (NEGATIVE)
+    - Value 0.5-1.0: Sneering, contemptuous (MAJOR NEGATIVE)
+    
+    AU12 (Lip Corner Puller - THE SMILE):
+    - Value 0.0-0.2: No smile, stone-faced, unexpressive (MAJOR NEGATIVE - subtract 15-20 points)
+    - Value 0.2-0.4: Weak smile, half-hearted (NEGATIVE - subtract 5-10 points)
+    - Value 0.4-0.6: Decent smile, friendly (NEUTRAL to slight positive)
+    - Value 0.6-0.8: Strong smile, engaging (POSITIVE - add 10-15 points)
+    - Value 0.8-1.0: Radiant smile, very charismatic (MAJOR POSITIVE - add 15-20 points)
+    
+    AU14 (Dimpler):
+    - Value 0.0-0.3: No dimples (neutral)
+    - Value 0.3-0.6: Slight dimples, charming (slight positive)
+    - Value 0.6-1.0: Strong dimples, very attractive (POSITIVE)
+    
+    AU17 (Chin Raiser):
+    - Value 0.0-0.3: Relaxed (normal)
+    - Value 0.3-0.6: Slightly tense or pouting (NEGATIVE)
+    - Value 0.6-1.0: Very tense, awkward (MAJOR NEGATIVE)
+    
+    AU23 (Lip Tightener):
+    - Value 0.0-0.3: Relaxed lips (good)
+    - Value 0.3-0.6: Tense, holding back (NEGATIVE)
+    - Value 0.6-1.0: Very tense, uncomfortable (MAJOR NEGATIVE)
+    
+    AU24 (Lip Pressor):
+    - Value 0.0-0.3: Relaxed (good)
+    - Value 0.3-0.6: Pressed lips, tense (NEGATIVE)
+    - Value 0.6-1.0: Very tense, stressed (MAJOR NEGATIVE)
+    
+    AU25 (Lips Part):
+    - Value 0.0-0.2: Closed mouth, possibly stiff (slight negative)
+    - Value 0.2-0.5: Naturally parted, relaxed (POSITIVE)
+    - Value 0.5-0.8: Open, expressive (POSITIVE)
+    - Value 0.8-1.0: Very open, possibly too much (neutral)
+    
+    AU26 (Jaw Drop):
+    - Value 0.0-0.2: Closed, possibly tense (neutral)
+    - Value 0.2-0.4: Slightly open, natural (POSITIVE)
+    - Value 0.4-0.7: Open, expressive, animated (POSITIVE)
+    - Value 0.7-1.0: Very open, possibly shocked or trying too hard (neutral to negative)
+    
+    AU45 (Blink):
+    - Value 0.0-0.3: Normal blinking (good)
+    - Value 0.3-0.6: Frequent blinking, nervous (NEGATIVE)
+    - Value 0.6-1.0: Excessive blinking, very nervous (MAJOR NEGATIVE)
+    
+    === PSYCHOLOGICAL METRICS ANALYSIS ===
+    These are computed from the AUs. Analyze EACH ONE:
+    
+    head_tilt (degrees from vertical):
+    - Value -5 to +5: Neutral, straight (normal)
+    - Value 5-15 or -5 to -15: Slight tilt, engaged or playful (POSITIVE)
+    - Value 15-30 or -15 to -30: Strong tilt, possibly trying too hard (neutral)
+    - Value >30 or <-30: Extreme tilt, awkward (NEGATIVE)
+    
+    eye_openness (0.0-1.0):
+    - Value 0.0-0.3: Squinting, disengaged, bored, or tense (MAJOR NEGATIVE - subtract 10-15 points)
+    - Value 0.3-0.5: Somewhat closed, low energy (NEGATIVE - subtract 5-10 points)
+    - Value 0.5-0.7: Normal, engaged (good)
+    - Value 0.7-0.9: Wide open, alert, engaged (POSITIVE - add 5-10 points)
+    - Value 0.9-1.0: Very wide, possibly surprised or intense (neutral to slight positive)
+    
+    smile_symmetry (0.0-1.0):
+    - Value 0.0-0.5: Very asymmetric, fake or forced smile (MAJOR NEGATIVE - subtract 10-15 points)
+    - Value 0.5-0.7: Somewhat asymmetric, not fully genuine (NEGATIVE - subtract 5-10 points)
+    - Value 0.7-0.85: Mostly symmetric, decent (neutral to slight positive)
+    - Value 0.85-0.95: Very symmetric, genuine smile (POSITIVE - add 10-15 points)
+    - Value 0.95-1.0: Perfect symmetry, authentic expression (MAJOR POSITIVE - add 15-20 points)
+    
+    brow_symmetry (0.0-1.0):
+    - Value 0.0-0.6: Asymmetric, confused or awkward (NEGATIVE)
+    - Value 0.6-0.8: Somewhat symmetric (neutral)
+    - Value 0.8-1.0: Symmetric, natural (POSITIVE)
+    
+    mouth_openness (0.0-1.0):
+    - Value 0.0-0.2: Closed, stiff, unexpressive (NEGATIVE - subtract 5-10 points)
+    - Value 0.2-0.4: Slightly open, relaxed (good)
+    - Value 0.4-0.7: Open, expressive, animated (POSITIVE - add 5-10 points)
+    - Value 0.7-1.0: Very open, very expressive (POSITIVE)
+    
+    tension_index (0.0-1.0 - CRITICAL METRIC):
+    - Value 0.0-0.3: Very relaxed, natural, confident (MAJOR POSITIVE - add 15-20 points)
+    - Value 0.3-0.5: Somewhat relaxed, decent (slight positive)
+    - Value 0.5-0.7: Tense, nervous, uncomfortable (NEGATIVE - subtract 10-15 points)
+    - Value 0.7-0.85: Very tense, awkward, stiff (MAJOR NEGATIVE - subtract 15-25 points)
+    - Value 0.85-1.0: Extremely tense, painful to watch (MASSIVE NEGATIVE - subtract 25-35 points)
+    
+    confidence_index (0.0-1.0 - CRITICAL METRIC):
+    - Value 0.0-0.3: No confidence, very awkward (MAJOR NEGATIVE - subtract 15-25 points)
+    - Value 0.3-0.5: Low confidence, uncertain (NEGATIVE - subtract 10-15 points)
+    - Value 0.5-0.7: Moderate confidence, decent (neutral to slight positive)
+    - Value 0.7-0.85: Confident, natural, engaging (POSITIVE - add 15-20 points)
+    - Value 0.85-1.0: Very confident, charismatic, natural (MAJOR POSITIVE - add 20-30 points)
+    
+    STEP 2: CALCULATE THE SCORE SYSTEMATICALLY:
+    
+    Start at 50 (baseline average person), then ADD/SUBTRACT based on the data above:
+    
+    === SMILE ANALYSIS (Most Important) ===
+    Look at AU12 value and apply:
+    - If AU12 is 0.0-0.2: Subtract 15-20 points (no smile = major problem)
+    - If AU12 is 0.2-0.4: Subtract 5-10 points (weak smile)
+    - If AU12 is 0.4-0.6: Add 0-5 points (decent smile)
+    - If AU12 is 0.6-0.8: Add 10-15 points (strong smile)
+    - If AU12 is 0.8-1.0: Add 15-20 points (radiant smile)
+    
+    Then check AU06 (genuine smile indicator):
+    - If AU06 < 0.2 AND AU12 > 0.3: Subtract 10 points (fake smile detected)
+    - If AU06 > 0.4 AND AU12 > 0.5: Add 10 points (genuine warm smile)
+    
+    === TENSION ANALYSIS (Critical) ===
+    Look at tension_index value and apply:
+    - If 0.0-0.3: Add 15-20 points (very relaxed, natural)
+    - If 0.3-0.5: Add 0-5 points (somewhat relaxed)
+    - If 0.5-0.7: Subtract 10-15 points (tense, nervous)
+    - If 0.7-0.85: Subtract 15-25 points (very tense, awkward)
+    - If 0.85-1.0: Subtract 25-35 points (extremely tense, painful)
+    
+    === CONFIDENCE ANALYSIS (Critical) ===
+    Look at confidence_index value and apply:
+    - If 0.0-0.3: Subtract 15-25 points (no confidence)
+    - If 0.3-0.5: Subtract 10-15 points (low confidence)
+    - If 0.5-0.7: Add 0-5 points (moderate confidence)
+    - If 0.7-0.85: Add 15-20 points (confident, natural)
+    - If 0.85-1.0: Add 20-30 points (very confident, charismatic)
+    
+    === EYE ENGAGEMENT ===
+    Look at eye_openness value and apply:
+    - If 0.0-0.3: Subtract 10-15 points (disengaged, bored)
+    - If 0.3-0.5: Subtract 5-10 points (low energy)
+    - If 0.5-0.7: Add 0 points (normal)
+    - If 0.7-0.9: Add 5-10 points (engaged, alert)
+    - If 0.9-1.0: Add 0-5 points (very intense)
+    
+    === SMILE AUTHENTICITY ===
+    Look at smile_symmetry value and apply:
+    - If 0.0-0.5: Subtract 10-15 points (very asymmetric, fake)
+    - If 0.5-0.7: Subtract 5-10 points (somewhat asymmetric)
+    - If 0.7-0.85: Add 0 points (decent)
+    - If 0.85-0.95: Add 10-15 points (very genuine)
+    - If 0.95-1.0: Add 15-20 points (perfectly authentic)
+    
+    === EXPRESSIVENESS ===
+    Look at mouth_openness value and apply:
+    - If 0.0-0.2: Subtract 5-10 points (stiff, closed off)
+    - If 0.2-0.4: Add 0 points (normal)
+    - If 0.4-0.7: Add 5-10 points (expressive, animated)
+    - If 0.7-1.0: Add 5-10 points (very expressive)
+    
+    === NEGATIVE INDICATORS ===
+    Check for these red flags:
+    - If AU04 (brow lowerer) > 0.4: Subtract 10 points (angry/tense)
+    - If AU09 (nose wrinkle) > 0.3: Subtract 10 points (disgust)
+    - If AU23 or AU24 (lip tension) > 0.4: Subtract 10 points (tense lips)
+    - If AU45 (blink) > 0.5: Subtract 5 points (nervous blinking)
+    - If AU01 or AU02 (brow raisers) > 0.5: Subtract 5 points (over-animated)
+    
+    === POSITIVE INDICATORS ===
+    Check for these good signs:
+    - If AU14 (dimpler) > 0.4: Add 5 points (charming dimples)
+    - If AU25 (lips part) between 0.2-0.6: Add 5 points (natural expression)
+    - If AU26 (jaw drop) between 0.2-0.5: Add 5 points (animated, expressive)
+    - If head_tilt between 5-20 degrees: Add 5 points (engaged, playful)
     
     STEP 3: NOW PROVIDE THE SCORE based on your calculation above:
     
