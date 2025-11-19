@@ -377,19 +377,21 @@ function isValidTopic(topic: string): boolean {
   
   return (
     words.length >= 1 && 
-    words.length <= 6 && 
+    words.length <= 10 && 
     cleanTopic.length > 2 && 
-    cleanTopic.length < 60 &&
+    cleanTopic.length < 80 &&
     /^[a-z\s\-']+$/.test(cleanTopic) &&
-    !cleanTopic.includes('  ') && // no double spaces
+    !cleanTopic.includes('  ') &&
     !cleanTopic.includes('undefined') &&
     !cleanTopic.includes('null') &&
-    !cleanTopic.match(/[0-9]/) && // no numbers
-    !cleanTopic.match(/[^a-z\s\-']/) // only allowed characters
+    !cleanTopic.match(/[0-9]/) &&
+    !cleanTopic.match(/[^a-z\s\-']/)
   );
 }
 
 export async function generateRandomDateTopic(): Promise<string> {
+  const callId = Math.random().toString(36).substring(7);
+  console.log(`generateRandomDateTopic called with ID: ${callId} at ${new Date().toISOString()}`);
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -402,64 +404,59 @@ export async function generateRandomDateTopic(): Promise<string> {
   const timestamp = Date.now();
   const randomCategory = [
     'weird food combinations and guilty pleasures',
-    'oddly specific fears and irrational anxieties',
-    'conspiracy theories and internet rabbit holes',
-    'useless talents and party tricks',
+    'oddly specific fears and anxieties',
+    'internet rabbit holes',
     'social media habits and digital behaviors',
     'current trends and viral moments',
-    'random thoughts and shower thoughts',
-    'modern problems and first world problems',
-    'tech quirks and app frustrations',
-    'generational differences and age gaps',
+    'interesting, reflective, and meaningful thoughts and shower thoughts',
     'childhood memories and nostalgia',
     'embarrassing moments and cringe stories',
     'weird collections and hoarding habits',
     'strange compliments and backhanded praise',
     'dating app experiences and online dating',
     'work stories and office drama',
-    'travel mishaps and vacation disasters',
-    'sleep habits and bedtime routines',
-    'philosophy and life lessons'
+    'daily routines and habits',
+    'philosophy and life lessons',
+    'deep and meaningful topics',
+    'personal and interesting topics',
+    'topics that make you think and reflect'
   ][Math.floor(Math.random() * 19)];
 
-  const prompt = `Generate exactly ONE very specific, quirky conversation topic for a date. This is request #${randomSeed} at ${timestamp}. Generate a COMPLETELY DIFFERENT topic than any previous response. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting.
+  const prompt = `Generate exactly ONE conversation topic for a date. This is request #${randomSeed} at ${timestamp}. Generate a COMPLETELY DIFFERENT topic than any previous response. Use your knowledge of current events, internet culture, social media trends, pop culture, and everyday life to create something interesting. IT SHOULD BE SOMETHING THAT A HUMAN WOULD ACTUALLY DO OR THINK OF AND TALK ABOUT. IT SHOULD ALSO BE SOMETHING THAT ANYONE CAN TALK ABOUT. NOT TOO NICHE OR WEIRD.
 
     REQUIREMENTS:
+    0. MAKE IT MAKE SENSE - do not generate a topic that is not possible or makes no sense. It should be a topic that a human would actually do or think of and talk about. IT NEEDS TO BE LOGICAL AND REASONABLE AND REALISTIC.
     1. Return ONLY the topic - no quotes, no explanations
     2. Use 1-10 words maximum  
     3. All lowercase letters only
-    4. Make it oddly specific and memorable
+    4. Make it relatable and memorable
     5. Should be fun but relatable and current
     6. Focus on: ${randomCategory}
     7. Generate something COMPLETELY UNIQUE - do not repeat previous topics
 
     TOPIC CATEGORIES EXAMPLES:
     - weird food combinations and guilty pleasures
-    - oddly specific fears and irrational anxieties
-    - conspiracy theories and internet rabbit holes
-    - useless talents and party tricks
+    - oddly specific fears and anxieties
+    - internet rabbit holes
     - social media habits and digital behaviors
     - current trends and viral moments
-    - random thoughts and shower thoughts
-    - modern problems and first world problems
-    - tech quirks and app frustrations
-    - generational differences and age gaps
+    - interesting, reflective, and meaningful thoughts and shower thoughts
     - childhood memories and nostalgia
     - embarrassing moments and cringe stories
     - weird collections and hoarding habits
     - strange compliments and backhanded praise
     - dating app experiences and online dating
     - work stories and office drama
-    - travel mishaps and vacation disasters
-    - sleep habits and bedtime routines
+    - daily routines and habits
     - philosophy and life lessons
+    - deep and meaningful topics
+    - topics that are personal and interesting
+    - topics that make you think and reflect
 
     EXAMPLE STYLES:
     eating cereal with orange juice - pretending stairs were lava - three am wikipedia deep dives
-    fear of butterflies touching you - backwards christmas morning routine - buying seventeen phone cases
-    birds are government drones - collecting vintage bottle caps - nice elbows compliment
-    wiggling ears on command - dipping fries in milkshakes - talking to houseplants daily
-    tiktok algorithm conspiracy theories - spotify wrapped embarrassment - autocorrect fails
+    collecting random items - best worst backhanded compliment
+    dipping fries in milkshakes - spotify wrapped embarrassment
 
     Generate ONE completely unique and different topic (seed: ${randomSeed}):`;
 
@@ -475,10 +472,14 @@ export async function generateRandomDateTopic(): Promise<string> {
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
   let topic = rawTopic.replace(/[^\w\s'-]/g, '').replace(/\s+/g, ' ').trim();
   
+  console.log(`OpenAI returned for ${callId}: "${rawTopic}" -> cleaned: "${topic}"`);
+  
   if (!isValidTopic(topic)) {
+    console.log(`Topic validation failed for ${callId}: "${topic}"`);
     throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
+  console.log(`Final topic for ${callId}: "${topic}"`);
   return topic;
 }
 

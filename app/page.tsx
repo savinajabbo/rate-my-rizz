@@ -55,7 +55,51 @@ export default function Home() {
   const audioDataRef = useRef<{ pitch: number; volume: number; timestamp: number }[]>([]);
 
   useEffect(() => {
+    const initializeCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 },
+          audio: true,
+        });
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setStatus('Error accessing camera. Please allow camera permissions.');
+      }
+    };
+
+    initializeCamera();
+
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isRecording) {
+      return;
+    }
+
     const initializeMediaPipe = async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (!videoRef.current || !videoRef.current.srcObject) {
+        console.warn('Video element not ready, waiting...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (!videoRef.current || !videoRef.current.srcObject) {
+        console.error('Video element still not ready after waiting');
+        return;
+      }
+      
       try {
         const { FaceMesh } = await import('@mediapipe/face_mesh');
         const faceMesh = new FaceMesh({
@@ -64,49 +108,57 @@ export default function Home() {
           },
         });
 
-    faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
+        faceMesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
 
-    faceMesh.onResults((results) => {
-      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && isRecording) {
-        const landmarks = results.multiFaceLandmarks[0];
-        const video = videoRef.current;
-        if (video) {
-          const aus = computeAUs(landmarks, video.videoWidth, video.videoHeight);
-          const metrics = computeMetrics(landmarks, video.videoWidth, video.videoHeight);
-          ausDataRef.current.push(aus);
-          metricsDataRef.current.push(metrics);
-        }
-      }
-    });
+        faceMesh.onResults((results) => {
+          if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && isRecording) {
+            const landmarks = results.multiFaceLandmarks[0];
+            const video = videoRef.current;
+            if (video) {
+              const aus = computeAUs(landmarks, video.videoWidth, video.videoHeight);
+              const metrics = computeMetrics(landmarks, video.videoWidth, video.videoHeight);
+              ausDataRef.current.push(aus);
+              metricsDataRef.current.push(metrics);
+            }
+          }
+        });
 
-    faceMeshRef.current = faceMesh;
+        faceMeshRef.current = faceMesh;
 
-    if (videoRef.current) {
-      const { Camera } = await import('@mediapipe/camera_utils');
-      const camera = new Camera(videoRef.current, {
-        onFrame: async () => {
-          await faceMesh.send({ image: videoRef.current! });
-        },
-        width: 640,
-        height: 480,
-      });
-      camera.start();
-      cameraRef.current = camera;
-    }
+        const { Camera } = await import('@mediapipe/camera_utils');
+        const camera = new Camera(videoRef.current, {
+          onFrame: async () => {
+            if (isRecording && faceMeshRef.current && videoRef.current) {
+              await faceMeshRef.current.send({ image: videoRef.current });
+            }
+          },
+          width: 640,
+          height: 480,
+        });
+        camera.start();
+        cameraRef.current = camera;
       } catch (error) {
         console.error('MediaPipe initialization failed:', error);
+        setStatus('Error initializing camera. Please refresh and try again.');
       }
     };
     
     initializeMediaPipe();
 
     return () => {
-      cameraRef.current?.stop();
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (faceMeshRef.current) {
+        faceMeshRef.current.close();
+        faceMeshRef.current = null;
+      }
     };
   }, [isRecording]);
 
@@ -250,13 +302,19 @@ export default function Home() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-        audio: true,
-      });
+      let stream: MediaStream;
+      
+      if (videoRef.current && videoRef.current.srcObject) {
+        stream = videoRef.current.srcObject as MediaStream;
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 },
+          audio: true,
+        });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
       }
 
       const videoTrack = stream.getVideoTracks()[0];
