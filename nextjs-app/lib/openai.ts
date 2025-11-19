@@ -389,11 +389,18 @@ function isValidTopic(topic: string): boolean {
 }
 
 export async function generateRandomDateTopic(): Promise<string> {
-  console.log('generateRandomDateTopic called');
+  console.log('🔵 generateRandomDateTopic called at:', new Date().toISOString());
+  console.log('🔵 Cache check - topicCache exists:', !!topicCache);
+  console.log('🔵 Cache check - CACHE_DURATION:', CACHE_DURATION);
   
-  if (topicCache && (Date.now() - topicCache.timestamp) < CACHE_DURATION) {
-    console.log('⚡ Returning cached topic:', topicCache.topic);
-    return topicCache.topic;
+  if (topicCache) {
+    const cacheAge = Date.now() - topicCache.timestamp;
+    console.log('🔵 Cache age (ms):', cacheAge);
+    console.log('🔵 Cache check result:', cacheAge < CACHE_DURATION);
+    if (cacheAge < CACHE_DURATION) {
+      console.log('⚡ Returning cached topic:', topicCache.topic);
+      return topicCache.topic;
+    }
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -402,8 +409,8 @@ export async function generateRandomDateTopic(): Promise<string> {
     throw new Error('OPENAI_API_KEY environment variable is required for topic generation');
   }
   
-  console.log('OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
-  console.log('Cache expired or empty, generating new topic with OpenAI...');
+  console.log('🔵 OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
+  console.log('🔵 Cache expired or empty, generating NEW topic with OpenAI...');
 
   const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. Requirements:
 
@@ -430,32 +437,36 @@ Return ONLY the lowercase topic, nothing else.`;
 
   console.log('Calling OpenAI API for topic generation...');
   
-  // Add timestamp to make each request unique
   const uniquePrompt = prompt + `\n\nGenerate a DIFFERENT topic than before. Current timestamp: ${Date.now()}`;
   
   const response = await getClient().chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: uniquePrompt }],
     max_tokens: 15,
-    temperature: 1.8, // Maximum randomness
-    presence_penalty: 1.0, // Strongly discourage repetition
-    frequency_penalty: 1.0, // Strongly discourage common patterns
+    temperature: 1.8,
+    presence_penalty: 1.0,
+    frequency_penalty: 1.0,
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
-  console.log('OpenAI raw response:', rawTopic);
-  console.log('API call completed successfully!');
+  console.log('🔵 OpenAI raw response:', rawTopic);
+  console.log('🔵 API call completed successfully!');
 
   let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
+  console.log('🔵 Cleaned topic:', topic);
   
   if (!isValidTopic(topic)) {
-    console.warn('Generated topic failed validation:', topic, 'Retrying...');
+    console.warn('🔵 Generated topic failed validation:', topic);
+    console.warn('🔵 Topic words:', topic.split(/\s+/));
+    console.warn('🔵 Topic length:', topic.length);
     throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
-  topicCache = { topic, timestamp: Date.now() };
+  const now = Date.now();
+  topicCache = { topic, timestamp: now };
+  console.log('🔵 Cached topic:', topic, 'at timestamp:', now);
   
-  console.log('Final topic:', topic);
+  console.log('🔵 Final topic being returned:', topic);
   return topic;
 }
 

@@ -3,9 +3,10 @@ import { generateRandomDateTopic } from '@/lib/openai';
 
 export async function GET() {
   const startTime = Date.now();
-  console.log('Random topic API called at:', new Date().toISOString());
-  console.log('Environment check - API key exists:', !!process.env.OPENAI_API_KEY);
-  console.log('Environment check - API key length:', process.env.OPENAI_API_KEY?.length || 0);
+  const requestId = Math.random().toString(36).substring(7);
+  console.log('🟢 Random topic API called at:', new Date().toISOString(), 'Request ID:', requestId);
+  console.log('🟢 Environment check - API key exists:', !!process.env.OPENAI_API_KEY);
+  console.log('🟢 Environment check - API key length:', process.env.OPENAI_API_KEY?.length || 0);
   
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -25,11 +26,11 @@ export async function GET() {
       );
     }
 
-    console.log('Generating random date topic with OpenAI...');
+    console.log('🟢 Generating random date topic with OpenAI... Request ID:', requestId);
     const topic = await generateRandomDateTopic();
     const processingTime = Date.now() - startTime;
     
-    console.log(`Successfully generated topic: "${topic}" (${processingTime}ms)`);
+    console.log(`🟢 Successfully generated topic: "${topic}" (${processingTime}ms) Request ID: ${requestId}`);
     
     return NextResponse.json(
       { 
