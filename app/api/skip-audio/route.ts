@@ -21,9 +21,11 @@ export async function POST(request: NextRequest) {
     
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
+    const topic = formData.get('topic') as string;
     
     console.log('received aus:', ausString?.substring(0, 100) + '...');
     console.log('received metrics:', metricsString?.substring(0, 100) + '...');
+    console.log('received topic:', topic);
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
     let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
       console.log('starting ai analysis (no audio)...');
-      rizzResult = await interpretExpression(aus, metrics);
+      rizzResult = await interpretExpression(aus, metrics, undefined, topic);
       console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);

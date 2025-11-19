@@ -107,16 +107,21 @@ export async function POST(request: NextRequest) {
 
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
+    const audioToneString = formData.get('audioTone') as string;
+    const topic = formData.get('topic') as string;
     
     console.log('received aus:', ausString);
     console.log('received metrics:', metricsString);
+    console.log('received topic:', topic);
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
+    let audioTone: Record<string, number> = {};
 
     try {
       aus = JSON.parse(ausString || '{}');
       metrics = JSON.parse(metricsString || '{}');
+      audioTone = JSON.parse(audioToneString || '{}');
     } catch (parseError) {
       console.error('failed to parse aus/metrics:', parseError);
       return NextResponse.json(
@@ -139,7 +144,8 @@ export async function POST(request: NextRequest) {
     try {
       console.log('starting ai analysis...');
       console.log('transcription:', transcription);
-      rizzResult = await interpretExpression(aus, metrics, transcription);
+      console.log('audio tone data:', audioTone);
+      rizzResult = await interpretExpression(aus, metrics, transcription, audioTone);
       console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);

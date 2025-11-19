@@ -177,13 +177,13 @@ export default function Home() {
       console.log('Using fallback topic due to error:', fallbackTopic);
       setRandomTopic(fallbackTopic);
     }
-  }, [topics]);
+  }, []);
 
   // generate random topic on component mount
   useEffect(() => {
     console.log('useEffect running - about to call generateNewTopic');
     generateNewTopic();
-  }, []);
+  }, [generateNewTopic]);
 
   const startRecording = async () => {
     try {
@@ -313,6 +313,7 @@ export default function Home() {
     formData.append('audio', freshAudioBlob, 'recording.webm');
     formData.append('aus', JSON.stringify(avgAUs));
     formData.append('metrics', JSON.stringify(avgMetrics));
+    formData.append('topic', randomTopic);
 
     try {
       setProcessingStep('Sending to server...');
@@ -348,6 +349,7 @@ export default function Home() {
         const fallbackFormData = new FormData();
         fallbackFormData.append('aus', JSON.stringify(avgAUs));
         fallbackFormData.append('metrics', JSON.stringify(avgMetrics));
+        fallbackFormData.append('topic', randomTopic);
         
         response = await fetch('/api/skip-audio', {
           method: 'POST',

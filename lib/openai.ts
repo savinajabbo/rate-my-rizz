@@ -16,7 +16,8 @@ function getClient() {
 export async function interpretExpression(
   aus: Record<string, number>,
   metrics: Record<string, number>,
-  transcription?: string
+  transcription?: string,
+  audioTone?: Record<string, number>
 ): Promise<{ score: number; rizzType: string; analysis: string }> {
   const prompt = `
     You are a RUTHLESSLY BRUTAL Gen Z TikTok roaster who destroys people's dating game with ZERO mercy. You're savage, unfiltered, and hilariously mean. Think Gordon Ramsay meets r/RoastMe meets brutal TikTok commentary. NO SUGAR COATING. NO PARTICIPATION TROPHIES.
@@ -24,11 +25,18 @@ export async function interpretExpression(
     BE ABSOLUTELY SAVAGE AND BRUTALLY HONEST. Most people have mid to terrible rizz - CALL IT OUT.
     Here are the inputs:
 
+    === DATING SCENARIO CONTEXT ===
+    The person was supposed to be talking about: "${topic || 'unknown topic'}"
+    This is what their date brought up as a conversation topic. Judge how well they handled discussing this topic!
+    
     Action Units (AUs): ${JSON.stringify(aus, null, 2)}
     Psychological Metrics: ${JSON.stringify(metrics, null, 2)}
     
     === WHAT THEY SAID (Audio Transcription) ===
     ${transcription || 'No speech detected - they said NOTHING (MAJOR RED FLAG - subtract 15-20 points for being silent/boring)'}
+    
+    === AUDIO TONE ANALYSIS ===
+    ${audioTone ? JSON.stringify(audioTone, null, 2) : 'No audio tone data available'}
     
     STEP 1: DEEP FACIAL ANALYSIS - EXAMINE EVERY METRIC IN DETAIL:
     
@@ -255,7 +263,51 @@ export async function interpretExpression(
     - Filler words ("um", "uh", "like"): Subtract 3-5 points per excessive use
     - Confidence in speech: Confident = add 5 points, Hesitant = subtract 5 points
     - Humor/wit: Funny = add 10 points, Trying too hard = subtract 5 points
-    - Relevance to topic: On topic = good, Random nonsense = subtract 10 points
+    - Relevance to topic: CRITICAL - Did they actually talk about "${topic || 'the given topic'}"?
+      * Completely off-topic or ignored the topic: Subtract 15-20 points (major red flag)
+      * Barely mentioned the topic: Subtract 10-15 points 
+      * Somewhat related to topic: Add 0-5 points
+      * Directly engaged with topic: Add 10-15 points
+      * Creative/interesting take on topic: Add 15-25 points
+    
+    === AUDIO TONE ANALYSIS ===
+    If audio tone data is available, analyze vocal characteristics:
+    
+    avgPitch (Hz):
+    - 80-120: Very deep voice (add 5 points for confidence)
+    - 120-180: Deep/low voice (add 3 points)
+    - 180-250: Normal range (neutral)
+    - 250-350: Higher voice (neutral to slight negative)
+    - 350+: Very high/squeaky (subtract 5 points)
+    
+    pitchVariation (0-1):
+    - 0.0-0.1: Monotone, boring (subtract 10 points)
+    - 0.1-0.3: Some variation (neutral)
+    - 0.3-0.6: Good expressiveness (add 5-10 points)
+    - 0.6+: Very expressive or nervous (add 5 or subtract 5 depending on context)
+    
+    avgVolume (0-1):
+    - 0.0-0.2: Too quiet, no confidence (subtract 10 points)
+    - 0.2-0.4: Quiet but acceptable (slight negative)
+    - 0.4-0.7: Good volume (add 5 points)
+    - 0.7-0.9: Confident volume (add 10 points)
+    - 0.9+: Too loud, aggressive (subtract 5 points)
+    
+    volumeVariation (0-1):
+    - 0.0-0.2: Flat delivery (subtract 5 points)
+    - 0.2-0.5: Good dynamics (add 5 points)
+    - 0.5+: Very dynamic or inconsistent (neutral)
+    
+    speakingRate (samples per second):
+    - 0-5: Very slow/hesitant (subtract 10 points)
+    - 5-15: Normal pace (neutral)
+    - 15-25: Good pace (add 5 points)
+    - 25+: Too fast/nervous (subtract 5 points)
+    
+    confidence (0-1):
+    - 0.0-0.3: Low audio confidence (subtract 5 points)
+    - 0.3-0.7: Moderate confidence (neutral)
+    - 0.7-1.0: High audio confidence (add 5 points)
     
     STEP 3: NOW PROVIDE THE SCORE based on your calculation above:
     
@@ -296,9 +348,10 @@ export async function interpretExpression(
     
        IMPORTANT: Make this LONG and DETAILED. Include:
        - Roast their facial expression (or lack thereof)
-       - Roast what they said (or didn't say)
+       - Roast what they said (or didn't say) AND how it related to the topic "${topic || 'the given topic'}"
        - Compare them to something funny/embarrassing
        - Give specific feedback on what's wrong
+       - Judge their topic engagement: Did they actually talk about "${topic || 'the topic'}" or completely ignore it?
        - End with a final devastating blow or advice
        
        Low scores (under 40) should be ABSOLUTELY DEVASTATING roasts. Mid scores (40-70) should be harsh but fair. Only high scores (75+) get compliments mixed with light roasting. Examples:
@@ -370,7 +423,7 @@ const FALLBACK_TOPICS = [
 ];
 
 let topicCache: { topic: string; timestamp: number } | null = null;
-const CACHE_DURATION = 0; 
+const CACHE_DURATION = 1000; 
 
 function getRandomFallbackTopic(): string {
   const randomIndex = Math.floor(Math.random() * FALLBACK_TOPICS.length);
@@ -389,14 +442,14 @@ function isValidTopic(topic: string): boolean {
 }
 
 export async function generateRandomDateTopic(): Promise<string> {
-  console.log('🔵 generateRandomDateTopic called at:', new Date().toISOString());
-  console.log('🔵 Cache check - topicCache exists:', !!topicCache);
-  console.log('🔵 Cache check - CACHE_DURATION:', CACHE_DURATION);
+  console.log('generateRandomDateTopic called at:', new Date().toISOString());
+  console.log('Cache check - topicCache exists:', !!topicCache);
+  console.log('Cache check - CACHE_DURATION:', CACHE_DURATION);
   
   if (topicCache) {
     const cacheAge = Date.now() - topicCache.timestamp;
-    console.log('🔵 Cache age (ms):', cacheAge);
-    console.log('🔵 Cache check result:', cacheAge < CACHE_DURATION);
+    console.log('cache age (ms):', cacheAge);
+    console.log('cache check result:', cacheAge < CACHE_DURATION);
     if (cacheAge < CACHE_DURATION) {
       console.log('⚡ Returning cached topic:', topicCache.topic);
       return topicCache.topic;
@@ -409,29 +462,27 @@ export async function generateRandomDateTopic(): Promise<string> {
     throw new Error('OPENAI_API_KEY environment variable is required for topic generation');
   }
   
-  console.log('🔵 OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
-  console.log('🔵 Cache expired or empty, generating NEW topic with OpenAI...');
+  console.log('OpenAI API key found:', apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4));
+  console.log('Cache expired or empty, generating NEW topic with OpenAI...');
 
   const prompt = `Generate a single, random, interesting topic that someone might talk about on a date. Requirements:
 
 STRICT FORMAT:
-- Exactly 1-4 words only
+- Exactly 1-10 words only
 - ALL LOWERCASE letters
 - No punctuation except hyphens or apostrophes
 - No explanations or extra text
 - A topic that any human being would be able to talk about. Not too technical or niche.
 
 TOPIC CATEGORIES (pick randomly):
-- Hobbies & Crafts
 - Science & Nature
 - Food & Culture
 - Arts & Entertainment
 - Mystery & Unusual
-- History & Ancient
 - Psychology & Philosophy
 - Fun Improv Topics
 
-EXAMPLES: "mushroom foraging", "vintage cameras", "pickle burgers", "memory palaces", "bee keeping", "origami art", "desert survival", "coffee roasting"
+EXAMPLES: "vintage cameras", "pickle burgers", "coffee", "nostalgia for things we never lived through"
 
 Return ONLY the lowercase topic, nothing else.`;
 
@@ -449,24 +500,16 @@ Return ONLY the lowercase topic, nothing else.`;
   });
 
   const rawTopic = response.choices[0].message.content?.trim().toLowerCase() || '';
-  console.log('🔵 OpenAI raw response:', rawTopic);
-  console.log('🔵 API call completed successfully!');
 
   let topic = rawTopic.replace(/[^\w\s'-]/g, '').trim();
-  console.log('🔵 Cleaned topic:', topic);
   
   if (!isValidTopic(topic)) {
-    console.warn('🔵 Generated topic failed validation:', topic);
-    console.warn('🔵 Topic words:', topic.split(/\s+/));
-    console.warn('🔵 Topic length:', topic.length);
     throw new Error(`Generated topic "${topic}" failed validation criteria`);
   }
 
   const now = Date.now();
   topicCache = { topic, timestamp: now };
-  console.log('🔵 Cached topic:', topic, 'at timestamp:', now);
   
-  console.log('🔵 Final topic being returned:', topic);
   return topic;
 }
 
