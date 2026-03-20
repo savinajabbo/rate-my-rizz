@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { computeAUs } from '@/lib/auFeature';
 import { computeMetrics } from '@/lib/metrics';
 
-export default function Home() {
+function OriginalApp() {
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState('click "am i the rizzler?" to start your 30-second rizz check.');
   const [results, setResults] = useState<any>(null);
@@ -53,6 +53,8 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioDataRef = useRef<{ pitch: number; volume: number; timestamp: number }[]>([]);
+  const recordingStartTimeRef = useRef<number | null>(null);
+  const timestampedFramesRef = useRef<{ aus: Record<string, number>; metrics: Record<string, number>; timestamp: number }[]>([]);
 
   useEffect(() => {
     const initializeCamera = async () => {
@@ -119,11 +121,22 @@ export default function Home() {
           if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 && isRecording) {
             const landmarks = results.multiFaceLandmarks[0];
             const video = videoRef.current;
-            if (video) {
+            if (video && recordingStartTimeRef.current !== null) {
               const aus = computeAUs(landmarks, video.videoWidth, video.videoHeight);
               const metrics = computeMetrics(landmarks, video.videoWidth, video.videoHeight);
+              
+              // Calculate timestamp relative to recording start (in seconds)
+              const timestamp = (Date.now() - recordingStartTimeRef.current) / 1000;
+              
               ausDataRef.current.push(aus);
               metricsDataRef.current.push(metrics);
+              
+              // Store timestamped frame data for time-aligned analysis
+              timestampedFramesRef.current.push({
+                aus,
+                metrics,
+                timestamp
+              });
             }
           }
         });
@@ -196,7 +209,6 @@ export default function Home() {
     }
   }, []);
 
-  // No automatic topic generation - user must click "get new topic" button
 
   const detectPitch = (dataArray: Uint8Array, sampleRate: number): number => {
     const bufferLength = dataArray.length;
@@ -343,6 +355,10 @@ export default function Home() {
       ausDataRef.current = [];
       metricsDataRef.current = [];
       audioDataRef.current = [];
+      timestampedFramesRef.current = [];
+      
+      // Record the start time for timestamp calculations
+      recordingStartTimeRef.current = Date.now();
 
       startAudioAnalysis();
 
@@ -407,6 +423,8 @@ export default function Home() {
 
     await Promise.all([videoStopped, audioStopped]);
     await new Promise((resolve) => setTimeout(resolve, 500));
+    const firstAudioBuffer = await audioChunksRef.current[0].arrayBuffer();
+    await new AudioContext().decodeAudioData(firstAudioBuffer);
 
     if (videoChunksRef.current.length === 0 || audioChunksRef.current.length === 0) {
       setStatus('Error: No recording data captured.');
@@ -419,37 +437,105 @@ export default function Home() {
     console.log('Original video size:', videoBlob.size, 'bytes');
     console.log('Original audio size:', audioBlob.size, 'bytes');
 
+    // Calculate comprehensive statistics for AUs and metrics
+    const frameCount = ausDataRef.current.length;
+    const expectedFrames = 30 * 30; // 30 seconds * ~30 fps = ~900 frames
+    const frameCaptureRate = frameCount / expectedFrames;
+    
+    console.log(`Frame collection stats: ${frameCount} frames captured (expected ~${expectedFrames}, ${(frameCaptureRate * 100).toFixed(1)}% coverage)`);
+    
+    if (frameCount < 50) {
+      console.warn(`WARNING: Only ${frameCount} frames captured. This may indicate face detection issues or performance problems.`);
+    }
+
     const avgAUs: Record<string, number> = {};
+    const minAUs: Record<string, number> = {};
+    const maxAUs: Record<string, number> = {};
     const avgMetrics: Record<string, number> = {};
+    const minMetrics: Record<string, number> = {};
+    const maxMetrics: Record<string, number> = {};
 
     if (ausDataRef.current.length > 0) {
       const keys = Object.keys(ausDataRef.current[0]);
       keys.forEach((key) => {
-        avgAUs[key] =
-          ausDataRef.current.reduce((sum, aus) => sum + (aus[key] || 0), 0) /
-          ausDataRef.current.length;
+        const values = ausDataRef.current.map(aus => aus[key] || 0);
+        avgAUs[key] = values.reduce((sum, val) => sum + val, 0) / values.length;
+        minAUs[key] = Math.min(...values);
+        maxAUs[key] = Math.max(...values);
       });
     }
 
     if (metricsDataRef.current.length > 0) {
       const keys = Object.keys(metricsDataRef.current[0]);
       keys.forEach((key) => {
-        avgMetrics[key] =
-          metricsDataRef.current.reduce((sum, m) => sum + (m[key] || 0), 0) /
-          metricsDataRef.current.length;
+        const values = metricsDataRef.current.map(m => m[key] || 0);
+        avgMetrics[key] = values.reduce((sum, val) => sum + val, 0) / values.length;
+        minMetrics[key] = Math.min(...values);
+        maxMetrics[key] = Math.max(...values);
       });
     }
+    
+    // Calculate trends (comparing first half vs second half of recording)
+    const calculateTrend = (values: number[]): number => {
+      if (values.length < 2) return 0;
+      const mid = Math.floor(values.length / 2);
+      const firstHalf = values.slice(0, mid);
+      const secondHalf = values.slice(mid);
+      const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+      const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+      return secondAvg - firstAvg; // positive = improved, negative = worsened
+    };
+    
+    const trendAUs: Record<string, number> = {};
+    const trendMetrics: Record<string, number> = {};
+    
+    if (ausDataRef.current.length > 0) {
+      const keys = Object.keys(ausDataRef.current[0]);
+      keys.forEach((key) => {
+        const values = ausDataRef.current.map(aus => aus[key] || 0);
+        trendAUs[key] = calculateTrend(values);
+      });
+    }
+    
+    if (metricsDataRef.current.length > 0) {
+      const keys = Object.keys(metricsDataRef.current[0]);
+      keys.forEach((key) => {
+        const values = metricsDataRef.current.map(m => m[key] || 0);
+        trendMetrics[key] = calculateTrend(values);
+      });
+    }
+    
+    console.log('Data statistics:', {
+      frameCount,
+      frameCaptureRate: `${(frameCaptureRate * 100).toFixed(1)}%`,
+      auKeys: Object.keys(avgAUs).length,
+      metricKeys: Object.keys(avgMetrics).length,
+      sampleTrends: {
+        'AU12 (smile)': trendAUs['AU12']?.toFixed(3),
+        'tension_index': trendMetrics['tension_index']?.toFixed(3),
+        'confidence_index': trendMetrics['confidence_index']?.toFixed(3)
+      }
+    });
 
     const freshVideoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
     const freshAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
     
     const audioToneData = calculateAudioToneMetrics();
-    
+
     const formData = new FormData();
     formData.append('video', freshVideoBlob, 'recording.webm');
     formData.append('audio', freshAudioBlob, 'recording.webm');
     formData.append('aus', JSON.stringify(avgAUs));
     formData.append('metrics', JSON.stringify(avgMetrics));
+    formData.append('ausMin', JSON.stringify(minAUs));
+    formData.append('ausMax', JSON.stringify(maxAUs));
+    formData.append('metricsMin', JSON.stringify(minMetrics));
+    formData.append('metricsMax', JSON.stringify(maxMetrics));
+    formData.append('ausTrends', JSON.stringify(trendAUs));
+    formData.append('metricsTrends', JSON.stringify(trendMetrics));
+    formData.append('frameCount', frameCount.toString());
+    formData.append('timestampedFrames', JSON.stringify(timestampedFramesRef.current));
+    formData.append('audioToneData', JSON.stringify(audioDataRef.current));
     formData.append('audioTone', JSON.stringify(audioToneData));
     formData.append('topic', randomTopic);
 
@@ -626,7 +712,7 @@ export default function Home() {
         {(ausDataRef.current.length > 0 || metricsDataRef.current.length > 0) && (
           <div className="bg-blue-500/20 backdrop-blur-md rounded-lg p-4 mt-4">
             <h3 className="text-lg font-bold mb-2" style={{color: '#AE2D80'}}>debug info</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               {ausDataRef.current.length > 0 && (
                 <div>
                   <h4 className="font-bold mb-1" style={{color: '#AE2D80'}}>action units (latest):</h4>
@@ -699,6 +785,7 @@ export default function Home() {
                 </p>
               </div>
             )}
+
             <details className="mt-4">
               <summary className="cursor-pointer text-sm font-bold" style={{color: '#AE2D80'}}>debug: raw server response</summary>
               <pre className="bg-black/50 p-2 rounded mt-2 text-xs overflow-auto max-h-40 font-bold" style={{color: '#AE2D80'}}>
@@ -707,6 +794,37 @@ export default function Home() {
             </details>
           </div>
         )}
+      </div>
+    </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <main
+      className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden"
+      style={{ backgroundColor: '#D6C0B3' }}
+    >
+      <div
+        className="absolute inset-0 opacity-30 paper-texture"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 1px 1px, rgba(139,69,19,0.15) 1px, transparent 0)',
+          backgroundSize: '20px 20px',
+        }}
+      />
+      <div className="absolute top-20 left-16 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
+
+      <div className="w-full max-w-2xl bg-white/40 backdrop-blur-sm rounded-2xl p-10 mt-8 border-2 border-amber-200/60" style={{ boxShadow: '0 15px 35px rgba(139,69,19,0.15)' }}>
+        <h2 className="text-3xl font-bold mb-4 text-center font-serif" style={{ color: '#AE2D80' }}>
+          rate my rizz is under construction
+        </h2>
+        <p className="text-lg leading-relaxed text-center font-bold" style={{ color: '#AE2D80' }}>
+          we’re polishing the detection and vibe checks. check back soon for the full “rate my rizz” experience.
+        </p>
+
+        <div className="mt-6 flex items-center justify-center">
+        </div>
       </div>
     </main>
   );

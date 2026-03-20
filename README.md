@@ -1,7 +1,5 @@
 # Rate My Rizz - Next.js Version
 
-A Next.js/TypeScript version of the Rate My Rizz app, deployed on Vercel.
-
 ## Features
 
 - ✅ Client-side video recording with MediaPipe Face Mesh

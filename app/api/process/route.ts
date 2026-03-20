@@ -5,11 +5,13 @@ import { interpretExpression } from '@/lib/openai';
 export const maxDuration = 60; // Maximum duration in seconds
 export const dynamic = 'force-dynamic'; // Disable static optimization
 
-async function transcribeAudio(audioBlob: Blob): Promise<string> {
+async function transcribeAudio(audioBlob: Blob): Promise<{ text: string; words?: Array<{ word: string; start: number; end: number }> }> {
   try {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.webm');
     formData.append('model', 'whisper-1');
+    formData.append('response_format', 'verbose_json');
+    formData.append('timestamp_granularities[]', 'word');
 
     console.log('sending audio to whisper api, size:', audioBlob.size);
 
@@ -20,6 +22,9 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
       },
       body: formData,
     });
+
+    const responseText = await response.text();
+    console.log("whisper api repsonse text: ", responseText);
 
     console.log('whisper api response status:', response.status);
 
@@ -36,7 +41,18 @@ async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
     const data = await response.json();
     console.log('whisper api response:', data);
-    return data.text || 'No speech detected.';
+    
+    // Extract word-level timestamps if available
+    const words = data.words?.map((w: any) => ({
+      word: w.word,
+      start: w.start,
+      end: w.end
+    })) || [];
+    
+    return {
+      text: data.text || 'No speech detected.',
+      words: words.length > 0 ? words : undefined
+    };
   } catch (error: any) {
     console.error('transcription error:', error);
     throw new Error(`Audio transcription failed: ${error.message}`);
@@ -74,7 +90,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    // log the video and audio file sizes
     console.log('processing files:', { 
       videoSize: videoFile.size, 
       audioSize: audioFile.size,
@@ -90,6 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     let transcription = 'No speech detected.';
+    let transcriptionWords: Array<{ word: string; start: number; end: number }> | undefined = undefined;
     try {
       console.log('starting audio transcription...');
       const audioBuffer = await audioFile.arrayBuffer();
@@ -98,8 +115,11 @@ export async function POST(request: NextRequest) {
       const audioBlob = new Blob([audioBuffer], { type: audioFile.type || 'audio/webm' });
       console.log('created audio blob, size:', audioBlob.size);
       
-      transcription = await transcribeAudio(audioBlob);
+      const transcriptionResult = await transcribeAudio(audioBlob);
+      transcription = transcriptionResult.text;
+      transcriptionWords = transcriptionResult.words;
       console.log('transcription successful:', transcription.substring(0, 100) + '...');
+      console.log('word timestamps:', transcriptionWords?.length || 0, 'words');
     } catch (transcriptionError: any) {
       console.error('transcription failed:', transcriptionError);
       transcription = 'Audio transcription failed: ' + transcriptionError.message;
@@ -107,24 +127,57 @@ export async function POST(request: NextRequest) {
 
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
+    const ausMinString = formData.get('ausMin') as string;
+    const ausMaxString = formData.get('ausMax') as string;
+    const metricsMinString = formData.get('metricsMin') as string;
+    const metricsMaxString = formData.get('metricsMax') as string;
+    const ausTrendsString = formData.get('ausTrends') as string;
+    const metricsTrendsString = formData.get('metricsTrends') as string;
+    const frameCountString = formData.get('frameCount') as string;
+    const timestampedFramesString = formData.get('timestampedFrames') as string;
+    const audioToneDataString = formData.get('audioToneData') as string;
     const topic = formData.get('topic') as string;
     
     console.log('received aus:', ausString);
     console.log('received metrics:', metricsString);
+    console.log('received frameCount:', frameCountString);
     console.log('received topic:', topic);
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
+    let ausMin: Record<string, number> = {};
+    let ausMax: Record<string, number> = {};
+    let metricsMin: Record<string, number> = {};
+    let metricsMax: Record<string, number> = {};
+    let ausTrends: Record<string, number> = {};
+    let metricsTrends: Record<string, number> = {};
+    let frameCount: number = 0;
+    let timestampedFrames: Array<{ aus: Record<string, number>; metrics: Record<string, number>; timestamp: number }> = [];
+    let audioToneData: Array<{ pitch: number; volume: number; timestamp: number }> = [];
 
     try {
       aus = JSON.parse(ausString || '{}');
       metrics = JSON.parse(metricsString || '{}');
+      ausMin = JSON.parse(ausMinString || '{}');
+      ausMax = JSON.parse(ausMaxString || '{}');
+      metricsMin = JSON.parse(metricsMinString || '{}');
+      metricsMax = JSON.parse(metricsMaxString || '{}');
+      ausTrends = JSON.parse(ausTrendsString || '{}');
+      metricsTrends = JSON.parse(metricsTrendsString || '{}');
+      frameCount = parseInt(frameCountString || '0', 10);
+      timestampedFrames = timestampedFramesString ? JSON.parse(timestampedFramesString) : [];
+      audioToneData = audioToneDataString ? JSON.parse(audioToneDataString) : [];
     } catch (parseError) {
       console.error('failed to parse aus/metrics:', parseError);
       return NextResponse.json(
         { error: 'Invalid facial analysis data format' },
         { status: 400 }
       );
+    }
+    
+    console.log(`Frame collection: ${frameCount} frames captured`);
+    if (frameCount < 50) {
+      console.warn(`WARNING: Low frame count (${frameCount}). Face detection may have issues.`);
     }
 
     if (!aus || Object.keys(aus).length === 0 || !metrics || Object.keys(metrics).length === 0) {
@@ -141,7 +194,40 @@ export async function POST(request: NextRequest) {
     try {
       console.log('starting ai analysis...');
       console.log('transcription:', transcription);
-      rizzResult = await interpretExpression(aus, metrics, transcription, topic);
+      
+      // Create time-aligned data structure (only if we have the data)
+      const timeAlignedData = (transcriptionWords && transcriptionWords.length > 0 && timestampedFrames.length > 0) ? {
+        transcriptionWords: transcriptionWords,
+        timestampedFrames: timestampedFrames,
+        audioToneData: audioToneData.length > 0 ? audioToneData.map(d => ({
+          pitch: d.pitch,
+          volume: d.volume,
+          timestamp: (d.timestamp - (audioToneData[0]?.timestamp || 0)) / 1000 // Convert to seconds relative to start
+        })) : []
+      } : undefined;
+      
+      console.log('Time-aligned data:', {
+        hasWords: transcriptionWords?.length || 0,
+        hasFrames: timestampedFrames.length,
+        hasAudioTone: audioToneData.length
+      });
+      
+      rizzResult = await interpretExpression(
+        aus, 
+        metrics, 
+        transcription, 
+        topic, 
+        {
+          ausMin,
+          ausMax,
+          metricsMin,
+          metricsMax,
+          ausTrends,
+          metricsTrends,
+          frameCount
+        },
+        timeAlignedData
+      );
       console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);

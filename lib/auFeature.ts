@@ -59,12 +59,48 @@ export function computeAUs(landmarks: any[], w: number, h: number): Record<strin
 
   aus["AU04"] = Math.max(0, (li[1] - midface[1]) / faceHeight);
 
+  // Calculate eye opening (height) for both eyes
   const eyeL = dist(eyeTopL, eyeBotL);
   const eyeR = dist(eyeTopR, eyeBotR);
-  const eyeAvg = eyeL + eyeR;
-  aus["AU06"] = Math.max(0, (0.04 * faceHeight - eyeAvg) / (0.04 * faceHeight));
+  const eyeAvg = (eyeL + eyeR) / 2; // Average eye opening height
+  
+  // Calculate eye width for normalization
+  const eyeLeftCornerL = getPoint(landmarks, 33, w, h); // Left eye outer corner
+  const eyeRightCornerL = getPoint(landmarks, 133, w, h); // Left eye inner corner
+  const eyeLeftCornerR = getPoint(landmarks, 362, w, h); // Right eye inner corner
+  const eyeRightCornerR = getPoint(landmarks, 263, w, h); // Right eye outer corner
+  const eyeWidthL = dist(eyeLeftCornerL, eyeRightCornerL);
+  const eyeWidthR = dist(eyeLeftCornerR, eyeRightCornerR);
+  const eyeWidthAvg = (eyeWidthL + eyeWidthR) / 2;
+  
+  // AU06: Cheek Raiser (genuine smile indicator) - measures how much eyes are squinted when smiling
+  // Normalized by eye width: when smiling genuinely, eyes squint (height/width ratio decreases)
+  const eyeOpennessRatio = eyeWidthAvg > 0 ? eyeAvg / eyeWidthAvg : 0;
+  // Baseline: normal eye openness is around 0.15-0.25 of eye width
+  // When smiling genuinely, this decreases (eyes squint)
+  const baselineEyeOpenness = 0.20; // Normal eye openness ratio
+  aus["AU06"] = Math.max(0, Math.min(1, (baselineEyeOpenness - eyeOpennessRatio) / baselineEyeOpenness));
 
-  aus["AU07"] = Math.max(0, (0.03 * (faceHeight - eyeAvg)) / (0.03 * faceHeight));
+  // AU07: Lid Tightener - measures how tight/closed the eyes are
+  // Higher values = more closed/tight eyes
+  // When eyes are open normally, eyeOpennessRatio should be around 0.15-0.30, so AU07 should be low
+  // When eyes are closed/squinted, eyeOpennessRatio < 0.10, so AU07 increases
+  // FIXED: Only detect squinting when eyes are ACTUALLY closed, not just slightly less open
+  if (baselineEyeOpenness > 0 && eyeOpennessRatio >= 0 && !isNaN(eyeOpennessRatio) && isFinite(eyeOpennessRatio)) {
+    // Normal eye openness is typically 0.15-0.30 (height/width ratio)
+    // Only consider it squinting if ratio is significantly below normal (less than 0.10)
+    // This prevents false positives for normal eyes
+    if (eyeOpennessRatio < 0.10) {
+      // Eyes are actually squinted/closed
+      // Scale: 0.10 = 0.3 AU07, 0.05 = 0.7 AU07, 0.0 = 1.0 AU07
+      aus["AU07"] = Math.max(0, Math.min(1, (0.10 - eyeOpennessRatio) / 0.10));
+    } else {
+      // Eyes are open normally - AU07 should be very low or zero
+      aus["AU07"] = 0;
+    }
+  } else {
+    aus["AU07"] = 0; // Default to relaxed if calculation fails
+  }
 
   const noseW = dist(noseL, noseR);
   aus["AU09"] = Math.max(0, (0.12 * faceHeight - noseW) / (0.12 * faceHeight));
@@ -72,8 +108,19 @@ export function computeAUs(landmarks: any[], w: number, h: number): Record<strin
   const upper = dist(upperLip, midface);
   aus["AU10"] = Math.max(0, upper / faceHeight);
 
+  // AU12: Lip Corner Puller (smile) - measures mouth width relative to face
+  // Need to account for baseline mouth width (neutral expression)
   const mouthW = dist(mouthL, mouthR);
-  aus["AU12"] = mouthW / faceHeight;
+  if (faceHeight > 0) {
+    // Baseline mouth width is typically around 0.15-0.20 of face height
+    const baselineMouthWidth = 0.17 * faceHeight;
+    // Calculate smile intensity: how much wider than baseline
+    const smileIntensity = Math.max(0, (mouthW - baselineMouthWidth) / baselineMouthWidth);
+    // Normalize to 0-1 range (cap at 2x baseline = very wide smile)
+    aus["AU12"] = Math.min(1, smileIntensity / 2);
+  } else {
+    aus["AU12"] = 0; // Default to no smile if face height is invalid
+  }
 
   aus["AU14"] = Math.abs((mouthL[1] - mouthR[1]) / faceHeight);
 
@@ -87,7 +134,11 @@ export function computeAUs(landmarks: any[], w: number, h: number): Record<strin
 
   aus["AU26"] = (lipGap * 1.5) / faceHeight;
 
-  aus["AU45"] = Math.max(0, (0.015 * faceHeight - eyeAvg) / (0.015 * faceHeight));
+  // AU45: Blink detection - measures if eyes are very closed (blinking)
+  // Use the same eye openness ratio, but threshold for blink detection
+  // Blink threshold: eye openness < 0.1 of baseline (very closed)
+  const blinkThreshold = baselineEyeOpenness * 0.1;
+  aus["AU45"] = eyeOpennessRatio < blinkThreshold ? 1 - (eyeOpennessRatio / blinkThreshold) : 0;
 
   return aus;
 }

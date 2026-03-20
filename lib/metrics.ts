@@ -15,14 +15,27 @@ export function computeMetrics(landmarks: any[], w: number, h: number): Record<s
 
   const headTilt = (Math.atan2(ry - ly, rx - lx) * 180) / Math.PI;
 
-  const eyeTop = landmarks[159];
-  const eyeBottom = landmarks[145];
-  const topb = dist(eyeTop, eyeBottom);
-
-  const eyeLeftCorner = landmarks[133];
-  const eyeRightCorner = landmarks[33];
-  const eyeWidth = dist(eyeLeftCorner, eyeRightCorner);
-  const eyeOpenness = eyeWidth > 0 ? topb / eyeWidth : 0;
+  // Calculate eye openness more accurately using both eyes
+  const leftEyeTop = landmarks[159];
+  const leftEyeBottom = landmarks[145];
+  const leftEyeHeight = dist(leftEyeTop, leftEyeBottom);
+  
+  const rightEyeTop = landmarks[386];
+  const rightEyeBottom = landmarks[374];
+  const rightEyeHeight = dist(rightEyeTop, rightEyeBottom);
+  
+  const leftEyeLeftCorner = landmarks[33];
+  const leftEyeRightCorner = landmarks[133];
+  const leftEyeWidth = dist(leftEyeLeftCorner, leftEyeRightCorner);
+  
+  const rightEyeLeftCorner = landmarks[362];
+  const rightEyeRightCorner = landmarks[263];
+  const rightEyeWidth = dist(rightEyeLeftCorner, rightEyeRightCorner);
+  
+  // Calculate openness ratio for both eyes and average
+  const leftEyeOpenness = leftEyeWidth > 0 ? leftEyeHeight / leftEyeWidth : 0;
+  const rightEyeOpenness = rightEyeWidth > 0 ? rightEyeHeight / rightEyeWidth : 0;
+  const eyeOpenness = (leftEyeOpenness + rightEyeOpenness) / 2;
 
   const lipLeft = landmarks[61];
   const lipRight = landmarks[291];
@@ -57,10 +70,25 @@ export function computeMetrics(landmarks: any[], w: number, h: number): Record<s
   const faceH = dist(chin, forehead);
   const mouthOpenness = faceH > 0 ? mouthOpen / faceH : 0;
 
-  const tension = Math.abs(
-    dist(landmarks[159], landmarks[145]) - dist(landmarks[386], landmarks[374])
-  );
-  const tensionIndex = Math.min(Math.max(tension * 5, 0), 1);
+  // Tension index: measures asymmetry between left and right eye opening
+  // More accurate calculation using normalized differences
+  // Reuse leftEyeHeight and rightEyeHeight already calculated above
+  const avgEyeOpen = (leftEyeHeight + rightEyeHeight) / 2;
+  
+  // Calculate relative asymmetry (difference / average)
+  const eyeAsymmetry = avgEyeOpen > 0 ? Math.abs(leftEyeHeight - rightEyeHeight) / avgEyeOpen : 0;
+  
+  // Also check for facial tension indicators: brow position
+  // Reuse browLeft and browRight already declared above
+  const browAsymmetry = Math.abs(browLeft.y - browRight.y);
+  
+  // Normalize by face height and combine indicators
+  // Reuse faceH already calculated above
+  const normalizedBrowAsymmetry = faceH > 0 ? browAsymmetry / faceH : 0;
+  
+  // Combine eye and brow asymmetry, normalize to 0-1
+  // Higher values = more tension
+  const tensionIndex = Math.min(1, (eyeAsymmetry * 0.6 + normalizedBrowAsymmetry * 10 * 0.4));
 
   const confidenceIndex = Math.max(
     0.0,

@@ -21,18 +21,40 @@ export async function POST(request: NextRequest) {
     
     const ausString = formData.get('aus') as string;
     const metricsString = formData.get('metrics') as string;
+    const ausMinString = formData.get('ausMin') as string;
+    const ausMaxString = formData.get('ausMax') as string;
+    const metricsMinString = formData.get('metricsMin') as string;
+    const metricsMaxString = formData.get('metricsMax') as string;
+    const ausTrendsString = formData.get('ausTrends') as string;
+    const metricsTrendsString = formData.get('metricsTrends') as string;
+    const frameCountString = formData.get('frameCount') as string;
     const topic = formData.get('topic') as string;
     
     console.log('received aus:', ausString?.substring(0, 100) + '...');
     console.log('received metrics:', metricsString?.substring(0, 100) + '...');
+    console.log('received frameCount:', frameCountString);
     console.log('received topic:', topic);
 
     let aus: Record<string, number> = {};
     let metrics: Record<string, number> = {};
+    let ausMin: Record<string, number> = {};
+    let ausMax: Record<string, number> = {};
+    let metricsMin: Record<string, number> = {};
+    let metricsMax: Record<string, number> = {};
+    let ausTrends: Record<string, number> = {};
+    let metricsTrends: Record<string, number> = {};
+    let frameCount: number = 0;
 
     try {
       aus = JSON.parse(ausString || '{}');
       metrics = JSON.parse(metricsString || '{}');
+      ausMin = ausMinString ? JSON.parse(ausMinString) : {};
+      ausMax = ausMaxString ? JSON.parse(ausMaxString) : {};
+      metricsMin = metricsMinString ? JSON.parse(metricsMinString) : {};
+      metricsMax = metricsMaxString ? JSON.parse(metricsMaxString) : {};
+      ausTrends = ausTrendsString ? JSON.parse(ausTrendsString) : {};
+      metricsTrends = metricsTrendsString ? JSON.parse(metricsTrendsString) : {};
+      frameCount = frameCountString ? parseInt(frameCountString, 10) : 0;
     } catch (parseError) {
       console.error('failed to parse aus/metrics:', parseError);
       return NextResponse.json(
@@ -54,7 +76,16 @@ export async function POST(request: NextRequest) {
     let rizzResult = { score: 50, rizzType: 'mysterious vibes', analysis: 'Analysis unavailable' };
     try {
       console.log('starting ai analysis (no audio)...');
-      rizzResult = await interpretExpression(aus, metrics, undefined, topic);
+      const temporalData = (Object.keys(ausMin).length > 0 || Object.keys(metricsMin).length > 0) ? {
+        ausMin,
+        ausMax,
+        metricsMin,
+        metricsMax,
+        ausTrends,
+        metricsTrends,
+        frameCount
+      } : undefined;
+      rizzResult = await interpretExpression(aus, metrics, undefined, topic, temporalData, undefined);
       console.log('analysis successful, score:', rizzResult.score, 'type:', rizzResult.rizzType);
     } catch (analysisError: any) {
       console.error('analysis failed:', analysisError);
