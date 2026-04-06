@@ -40,6 +40,7 @@ function OriginalApp() {
     'tension_index': 'Facial Tension',
     'confidence_index': 'Confidence Level'
   };
+  
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -800,6 +801,8 @@ function OriginalApp() {
 }
 
 export default function Home() {
+  // Temporary placeholder page (commented out)
+  /*
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden"
@@ -815,18 +818,22 @@ export default function Home() {
       />
       <div className="absolute top-20 left-16 w-24 h-24 bg-rose-200/20 rounded-full blur-2xl" />
 
-      <div className="w-full max-w-2xl bg-white/40 backdrop-blur-sm rounded-2xl p-10 mt-8 border-2 border-amber-200/60" style={{ boxShadow: '0 15px 35px rgba(139,69,19,0.15)' }}>
+      <div
+        className="w-full max-w-2xl bg-white/40 backdrop-blur-sm rounded-2xl p-10 mt-8 border-2 border-amber-200/60"
+        style={{ boxShadow: '0 15px 35px rgba(139,69,19,0.15)' }}
+      >
         <h2 className="text-3xl font-bold mb-4 text-center font-serif" style={{ color: '#AE2D80' }}>
           rate my rizz is under construction
         </h2>
         <p className="text-lg leading-relaxed text-center font-bold" style={{ color: '#AE2D80' }}>
-          we’re polishing the detection and vibe checks. check back soon for the full “rate my rizz” experience.
+          we’re polishing the detection and vibe checks. check back soon for the full “rate my rizz”
+          experience.
         </p>
-
-        <div className="mt-6 flex items-center justify-center">
-        </div>
       </div>
     </main>
   );
+  */
+
+  return <OriginalApp />;
 }
 
